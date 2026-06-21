@@ -1,10 +1,6 @@
 import { test } from '@fixtures';
 import { generateUser } from '@test-data/UserData';
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('/');
-});
-
 test.describe('Form Layouts', () => {
   test('submit inline form with name and email', async ({ pageManager }) => {
     const user = generateUser();

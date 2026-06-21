@@ -10,6 +10,7 @@ type TestFixtures = {
 
 export const test = base.extend<TestFixtures>({
   pageManager: async ({ page }, use) => {
+    await page.goto('/');
     await use(new PageManager(page));
   },
   apiManager: async ({ request }, use) => {
@@ -17,10 +18,10 @@ export const test = base.extend<TestFixtures>({
   },
   loggedInPage: async ({ page }, use) => {
     await page.goto('/login');
-    await page.getByLabel('Email').fill(process.env.USER_EMAIL!);
+    await page.getByLabel('Email').fill(process.env.USER_NAME!);
     await page.getByLabel('Password').fill(process.env.USER_PASSWORD!);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForURL('/dashboard');
+    await page.waitForURL('/#appointment');
     await use(page);
   },
 });
