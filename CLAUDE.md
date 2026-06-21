@@ -175,7 +175,7 @@ tests             → load session từ file, bắt đầu test (đã logged in)
 ## Environment
 
 - Copy `.env.example` to `.env` and fill in values before running tests
-- Required vars: `BASE_URL`, `USER_EMAIL`, `USER_PASSWORD`
+- Required vars: `BASE_URL`, `USER_NAME`, `USER_PASSWORD`
 - Tests use `page.goto('/')` — Playwright auto-prepends `baseURL` from `.env`
 - Adding a new required var: update `helpers/EnvValidator.ts` + `.env.example`
 

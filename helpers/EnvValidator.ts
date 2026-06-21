@@ -1,4 +1,4 @@
-const REQUIRED_ENV_VARS = ['BASE_URL', 'USER_EMAIL', 'USER_PASSWORD'];
+const REQUIRED_ENV_VARS = ['BASE_URL', 'USER_NAME', 'USER_PASSWORD'];
 
 export function validateEnvironment(): void {
   const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
