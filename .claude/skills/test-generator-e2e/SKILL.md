@@ -63,6 +63,10 @@ Files to update:
   page-objects/NavigationPage.ts         add navigateToMakeAppointment()
   page-manager/PageManager.ts            add onAppointmentPage()
 
+Components:
+  page-objects/components/DatepickerComponent.ts   REUSE   ← datepicker already extracted
+  (none needed)                                    ← if no shared UI element detected
+
 Scenarios: 1 test, 4 steps
 ```
 
@@ -120,6 +124,7 @@ Rules:
 - Methods named after business actions (e.g. `fillForm`, `bookAppointment`) — not UI steps
 - `waitForURL(...)` inside any method that causes page navigation
 - NO `expect()`, NO `verifyXxx()`, NO `waitFor()` in page objects
+- If a UI element (datepicker, modal, toast, table) appears on 2+ pages → extract to `page-objects/components/XxxComponent.ts` and instantiate it in the Page Object constructor instead of inlining the logic. Check `page-objects/components/` for existing components before creating new ones.
 
 Present the full code → **WAIT for user confirmation before writing any file.**
 
