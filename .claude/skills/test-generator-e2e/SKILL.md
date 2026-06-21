@@ -1,6 +1,6 @@
 ---
-name: test-generator
-description: Generates Playwright E2E tests for this hybrid framework. Use when user wants to create new tests or automate a new feature. Invoked with /test-generator.
+name: test-generator-e2e
+description: Generates Playwright E2E tests for this hybrid framework. Use when user wants to create new tests or automate a new feature. Invoked with /test-generator-e2e.
 allowed-tools: Read, Write, Edit, Bash, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_fill_form, mcp__playwright__browser_type, mcp__playwright__browser_press_key, mcp__playwright__browser_evaluate, mcp__playwright__browser_take_screenshot
 ---
 
@@ -10,7 +10,7 @@ Generates Playwright E2E tests following this project's hybrid framework convent
 
 ## When to Use
 
-Invoke with `/test-generator` or when user says: "generate test", "create test", "write test for [feature]", "new test"
+Invoke with `/test-generator-e2e` or when user says: "generate test", "create test", "write test for [feature]", "new test"
 
 ## Welcome Message
 
@@ -156,6 +156,43 @@ Static JSON (test-data/common/appointment.json):
 
 ---
 
+### Step 4.5 — Fixture Analysis
+
+Read `fixtures/index.ts` to understand what fixtures already exist, then analyze the test's preconditions.
+
+**Decision logic:**
+
+| Situation | Action |
+|-----------|--------|
+| Test needs setup steps that already exist as a fixture | Reuse existing fixture — do NOT duplicate steps in the test |
+| Multiple tests share the same precondition (e.g. "already booked", "user created") | Propose a new fixture in `fixtures/index.ts` |
+| Test is self-contained with no reusable precondition | No fixture needed |
+
+Present the analysis and recommendation:
+
+```
+Fixture analysis:
+  Existing fixtures: pageManager, apiManager, loggedInPage
+
+  This test requires "an appointment already booked" as precondition.
+  Same precondition may be needed by other history/verification tests.
+
+  Recommendation: create bookedAppointment fixture in fixtures/index.ts
+    → navigates to Make Appointment, fills form, books, returns AppointmentData
+    → test only needs to handle post-booking steps
+
+  Alternative: inline setup steps in the test (simpler, but duplicates code if reused)
+```
+
+**WAIT for user confirmation before proceeding.**
+
+If user confirms fixture creation:
+1. Update `fixtures/index.ts` — add type + fixture implementation
+2. Run `npx tsc --noEmit` then `npm run lint`
+3. Report results. If errors → show full output, NEVER auto-fix.
+
+---
+
 ### Step 5 — Generate Test File
 
 Follow `references/templates.md` Test File template exactly.
@@ -221,3 +258,5 @@ Wait for user input before taking any action.
 8. **ALWAYS run `tsc + lint` after writing files** — catch errors before test run
 9. **ALWAYS confirm stability with 2 consecutive passes**
 10. **ALWAYS update NavigationPage + PageManager** when adding a new page
+11. **ALWAYS run Step 4.5 fixture analysis** — never skip it, even if no fixture is needed; always show the recommendation and wait for confirmation before writing the test file
+12. **NEVER create a fixture** without explicit user confirmation — present the recommendation, explain the tradeoff, let user decide

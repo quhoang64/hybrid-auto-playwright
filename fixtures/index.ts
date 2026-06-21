@@ -1,11 +1,13 @@
 import { test as base, Page } from '@playwright/test';
 import { PageManager } from '@page-manager/PageManager';
 import { ApiManager } from '@api/ApiManager';
+import { AppointmentData, generateAppointmentData } from '@test-data/AppointmentData';
 
 type TestFixtures = {
   pageManager: PageManager;
   apiManager: ApiManager;
   loggedInPage: Page;
+  bookedAppointment: AppointmentData;
 };
 
 export const test = base.extend<TestFixtures>({
@@ -23,6 +25,13 @@ export const test = base.extend<TestFixtures>({
     await page.getByRole('button', { name: 'Log in' }).click();
     await page.waitForURL('/#appointment');
     await use(page);
+  },
+  bookedAppointment: async ({ pageManager }, use) => {
+    const data = generateAppointmentData();
+    await pageManager.onNavigationPage().navigateToMakeAppointment();
+    await pageManager.onAppointmentPage().fillForm(data);
+    await pageManager.onAppointmentPage().bookAppointment();
+    await use(data);
   },
 });
 
