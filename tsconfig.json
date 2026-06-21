@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@base/*": ["base/*"],
+      "@page-objects/*": ["page-objects/*"],
+      "@page-manager/*": ["page-manager/*"],
+      "@fixtures": ["fixtures/index"],
+      "@helpers/*": ["helpers/*"],
+      "@test-data/*": ["test-data/*"],
+      "@api/*": ["api/*"]
+    }
+  },
+  "include": [
+    "base/**/*.ts",
+    "page-objects/**/*.ts",
+    "page-manager/**/*.ts",
+    "fixtures/**/*.ts",
+    "helpers/**/*.ts",
+    "test-data/**/*.ts",
+    "api/**/*.ts",
+    "tests/**/*.ts",
+    "global-setup.ts"
+  ],
+  "exclude": ["node_modules"]
+}

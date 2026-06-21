@@ -1,0 +1,17 @@
+{
+  "standardUser": {
+    "name": "Auto Test User",
+    "email": "auto.test@example.com",
+    "password": "AutoTest@123"
+  },
+  "adminUser": {
+    "name": "Auto Admin User",
+    "email": "auto.admin@example.com",
+    "password": "AutoAdmin@123"
+  },
+  "readOnlyUser": {
+    "name": "Auto ReadOnly User",
+    "email": "auto.readonly@example.com",
+    "password": "AutoReadOnly@123"
+  }
+}

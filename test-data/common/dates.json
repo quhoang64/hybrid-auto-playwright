@@ -1,0 +1,11 @@
+{
+  "nearFuture": {
+    "daysFromToday": 5
+  },
+  "farFuture": {
+    "daysFromToday": 30
+  },
+  "nextMonth": {
+    "daysFromToday": 31
+  }
+}
