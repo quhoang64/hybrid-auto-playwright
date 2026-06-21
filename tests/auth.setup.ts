@@ -8,7 +8,7 @@ setup('authenticate', async ({ page }) => {
   await page.getByLabel('Username').fill(process.env.USER_NAME!);
   await page.getByLabel('Password').fill(process.env.USER_PASSWORD!);
   await page.getByRole('button', { name: 'Login' }).click();
-  await page.waitForURL('**/appointment.php');
+  await page.waitForURL('**/#appointment');
 
   await page.context().storageState({ path: AUTH_FILE });
 });

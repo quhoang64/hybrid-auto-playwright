@@ -729,16 +729,20 @@ Bạn không cần đụng vào code — chỉ cần mô tả form login là xon
 
 ```
 base/               BasePage.ts
-page-objects/       NavigationPage, FormLayoutsPage, DatepickerPage
+page-objects/       NavigationPage.ts, AppointmentPage.ts, ...
 page-manager/       PageManager.ts
-api/                BaseApi.ts, UserApi.ts, ApiManager.ts
+api/                BaseApi.ts, ApiManager.ts, ...
 fixtures/           index.ts  (pageManager + apiManager + loggedInPage)
-test-data/          UserData.ts, DateData.ts
-helpers/            (utils khi cần)
+test-data/          AppointmentData.ts, ...
+                    common/*.json  (static data)
+helpers/            DataLoader.ts, EnvValidator.ts
 tests/
   e2e/              UI/browser tests
   api/              Pure API tests
   auth.setup.ts
+.claude/
+  skills/
+    test-generator-e2e/   skill tự động generate test
 doc/                framework-setup-guide.md
 ```
 
@@ -747,6 +751,155 @@ doc/                framework-setup-guide.md
 npx playwright test tests/e2e    # chỉ chạy E2E
 npx playwright test tests/api    # chỉ chạy API tests
 npx playwright test              # chạy tất cả
+```
+
+---
+
+## Bước 13 — Locator pattern trong constructor
+
+**Vấn đề khi khai báo locator trong method:**
+```typescript
+// ❌ Sai — locator tạo mới mỗi lần gọi method, không rõ ràng
+confirmationFacility() {
+  return this.page.locator('#facility');
+}
+```
+
+**Pattern đúng — khai báo trong constructor:**
+```typescript
+// ✅ Đúng — tất cả locators ở một chỗ, dễ review
+export class AppointmentPage extends BasePage {
+  private readonly facilitySelect: Locator;      // form — chỉ class dùng
+  readonly confirmFacility: Locator;             // confirmation — test dùng trực tiếp
+
+  constructor(page: Page) {
+    super(page);
+    this.facilitySelect = page.getByRole('combobox', { name: 'Facility' });
+    this.confirmFacility = page.locator('#facility');
+  }
+
+  async fillForm(data: AppointmentData) {
+    await this.facilitySelect.selectOption(data.facility); // dùng this.xxx
+  }
+}
+
+// Trong test — truy cập trực tiếp, không có ()
+await expect(appointmentPage.confirmFacility).toHaveText(data.facility);
+```
+
+**Quy tắc visibility:**
+- `private readonly` — locators form/action, chỉ dùng trong class
+- `readonly` (public) — locators confirmation/assertion, test truy cập trực tiếp
+- Locator dynamic theo tham số → giữ inline trong method (không thể hardcode trước)
+
+**Prompt dùng:**
+```
+Refactor tất cả Page Objects theo pattern: khai báo tất cả locators
+là private readonly fields trong constructor, methods chỉ dùng this.locatorName.
+Confirmation locators dùng readonly (public) để test access trực tiếp.
+```
+
+---
+
+## Bước 14 — test.step() trong test files
+
+**Vấn đề khi không dùng test.step():**
+Khi test fail, report chỉ hiện dòng lỗi — không biết test đang làm gì khi fail.
+
+**Với test.step():**
+```typescript
+test('book appointment and verify confirmation', async ({ pageManager }) => {
+  const data = generateAppointmentData();
+  const appointmentPage = pageManager.onAppointmentPage();
+
+  await test.step('1. Navigate to Make Appointment page', async () => {
+    await pageManager.onNavigationPage().navigateToMakeAppointment();
+  });
+
+  await test.step('2. Fill appointment form', async () => {
+    await appointmentPage.fillForm(data);
+  });
+
+  await test.step('3. Submit appointment', async () => {
+    await appointmentPage.bookAppointment();
+  });
+
+  await test.step('4. Verify confirmation details', async () => {
+    await expect(appointmentPage.confirmFacility).toHaveText(data.facility);
+    await expect(appointmentPage.confirmReadmission).toHaveText(data.readmission ? 'Yes' : 'No');
+  });
+});
+```
+
+**Lợi ích:**
+- HTML report hiện rõ từng step — biết fail ở bước nào ngay
+- Trace viewer group actions theo step — dễ debug hơn
+- Test dễ đọc hơn — mỗi step = 1 intention rõ ràng
+
+**Quy tắc:**
+- Đánh số step: `'1. Navigate...'`, `'2. Fill...'`, `'3. Verify...'`
+- Tất cả assertions gom vào `test.step('N. Verify ...')`
+- Mỗi step = 1 nhóm logic liên quan, không quá nhỏ (tránh wrap từng dòng)
+
+**Prompt dùng:**
+```
+Refactor tất cả test files: wrap mỗi nhóm actions trong test.step() với tên
+mô tả rõ ràng. Tất cả assertions gom vào test.step('N. Verify ...')
+```
+
+---
+
+## Bước 15 — Skill test-generator-e2e
+
+Sau khi framework hoàn chỉnh, tạo Claude Code skill để tự động generate test từ natural language spec.
+
+**Tạo cấu trúc:**
+```
+.claude/
+  skills/
+    test-generator-e2e/
+      SKILL.md           ← workflow + golden rules
+      references/
+        templates.md     ← code templates
+        examples.md      ← worked example
+```
+
+**Skill làm gì:**
+1. Nhận spec dạng natural language
+2. Explore UI bằng Playwright MCP để lấy locators
+3. Generate Page Object + Test Data + Test File theo đúng framework conventions
+4. Chạy tsc + lint + test để verify
+5. Prompt chaining menu sau mỗi lần chạy
+
+**Invoke:**
+```
+/test-generator-e2e
+```
+
+**Input format:**
+```
+Feature: [feature name]
+URL: [page path]
+Priority: [smoke / regression]
+Feature tag: [kebab-case]
+
+Scenarios:
+- name: [test name]
+  steps:
+    1. [step description]
+    2. [step description]
+```
+
+**Portable sang dự án khác:**
+- Copy `.claude/skills/test-generator-e2e/` sang dự án mới
+- Nếu dự án mới cùng kiến trúc → dùng ngay
+- Nếu kiến trúc khác → nhờ Claude adapt `references/templates.md` cho phù hợp
+
+**Prompt tạo skill:**
+```
+Đọc skill .claude/skills/test-generator-e2e/SKILL.md và
+references/templates.md, sau đó đọc CLAUDE.md của dự án này
+và adapt skill cho phù hợp với conventions của project mới.
 ```
 
 ---

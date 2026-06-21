@@ -20,7 +20,7 @@ export const test = base.extend<TestFixtures>({
     await page.goto('/login');
     await page.getByLabel('Email').fill(process.env.USER_NAME!);
     await page.getByLabel('Password').fill(process.env.USER_PASSWORD!);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.waitForURL('/#appointment');
     await use(page);
   },

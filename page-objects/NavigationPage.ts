@@ -1,13 +1,15 @@
+import { Locator, Page } from '@playwright/test';
 import { BasePage } from '@base/BasePage';
 
 export class NavigationPage extends BasePage {
-  async navigateToFormLayouts() {
-    await this.page.getByText('Forms').click();
-    await this.page.getByText('Form Layouts').click();
+  private readonly makeAppointmentLink: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.makeAppointmentLink = page.getByRole('link', { name: 'Make Appointment' });
   }
 
-  async navigateToDatatpicker() {
-    await this.page.getByText('Forms').click();
-    await this.page.getByText('Datepicker').click();
+  async navigateToMakeAppointment() {
+    await this.makeAppointmentLink.click();
   }
 }
