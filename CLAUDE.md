@@ -56,6 +56,8 @@ Hybrid framework (UI + API): Tests → Fixtures → Managers → Objects → Bas
 base/
   BasePage.ts             foundation for all Page Objects
 page-objects/
+  components/
+    *Component.ts         reusable UI components (datepicker, modal…) — used by Page Objects
   *Page.ts                one file per page, extends BasePage
 page-manager/
   PageManager.ts          single entry point to all page objects
@@ -85,6 +87,7 @@ global-setup.ts           runs first — validates .env before anything else
 ## Layer responsibilities
 
 - **BasePage** — holds `page: Page` and shared helpers. Never instantiated directly.
+- **Components** (`page-objects/components/`) — reusable UI widgets shared across multiple pages (e.g. `DatepickerComponent`). Not a BasePage subclass — instantiated directly inside Page Object constructors. Extract to a component when the same UI element appears on 2+ pages.
 - **Page Objects** — encapsulate locators and user actions for one page. All locators declared as `private readonly` fields in the constructor. Methods named after business actions (e.g. `fillForm`, `bookAppointment`), not UI steps.
 - **PageManager** — owns one instance of every Page Object. Methods prefixed `on`. Tests never instantiate Page Objects directly.
 - **BaseApi** — holds `request: APIRequestContext`. All API classes extend this.
@@ -117,6 +120,54 @@ export class AppointmentPage extends BasePage {
 }
 ```
 
+## Page Object — component pattern
+
+When a UI widget (datepicker, modal, toast…) appears on 2+ pages, extract it to `page-objects/components/`. The component receives `page` and a trigger `Locator` in its constructor — making it reusable across any page with that widget.
+
+```typescript
+// page-objects/components/DatepickerComponent.ts
+export class DatepickerComponent {
+  constructor(page: Page, private readonly input: Locator) {
+    // locators scoped to the datepicker DOM
+  }
+  async selectDate(date: string): Promise<void> { ... }
+}
+
+// page-objects/AppointmentPage.ts — consumes the component
+export class AppointmentPage extends BasePage {
+  private readonly datepicker: DatepickerComponent;
+
+  constructor(page: Page) {
+    super(page);
+    this.datepicker = new DatepickerComponent(page, page.getByPlaceholder('dd/mm/yyyy'));
+  }
+
+  async fillForm(data: AppointmentData) {
+    await this.datepicker.selectDate(data.visitDate); // no duplication
+  }
+}
+
+// page-objects/ReschedulePage.ts — reuses the same component, different input
+export class ReschedulePage extends BasePage {
+  private readonly datepicker: DatepickerComponent;
+
+  constructor(page: Page) {
+    super(page);
+    this.datepicker = new DatepickerComponent(page, page.getByPlaceholder('Reschedule date'));
+  }
+}
+```
+
+**Rules:**
+- Components are NOT BasePage subclasses — they are plain classes instantiated inside Page Object constructors
+- Check `page-objects/components/` before inlining shared UI logic into a Page Object
+- Components never call `expect()` or `waitForURL()`
+
+## Adding a new component
+
+1. Create `page-objects/components/MyComponent.ts`
+2. Instantiate it inside the relevant Page Object constructor(s) — pass `page` + the trigger locator specific to that page
+
 ## Path aliases
 
 | Alias | Resolves to |
@@ -134,6 +185,7 @@ export class AppointmentPage extends BasePage {
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
 | Thêm page mới | Tạo `page-objects/MyPage.ts`, thêm vào `PageManager` + `NavigationPage` |
+| Thêm UI component dùng chung (2+ pages) | Tạo `page-objects/components/MyComponent.ts`, dùng trong Page Object constructor |
 | Thêm API endpoint mới | Tạo `api/MyApi.ts`, thêm vào `ApiManager` |
 | Thêm precondition / teardown | Thêm fixture mới vào `fixtures/index.ts` |
 | Thêm test data model (dynamic) | Tạo `test-data/MyData.ts` với interface + faker factory |
