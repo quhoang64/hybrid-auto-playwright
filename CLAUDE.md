@@ -253,11 +253,13 @@ tests             → load session từ file, bắt đầu test (đã logged in)
 - `playwright/.auth/` is git-ignored
 - Nếu app không hỗ trợ storageState: dùng `loggedInPage` fixture thay vì `page` — login qua UI mỗi test nhưng không duplicate code
 
-## Skill — test-generator-e2e
+## Skills
 
-Invoke `/test-generator-e2e` to auto-generate a full test from a natural language spec.
+### `/test-generator-e2e`
 
-The skill handles: UI exploration → Page Object → Test Data → Test File → run & validate.
+Auto-generate a full test from a natural language spec.
+
+Handles: UI exploration → Page Object → Test Data → fixture analysis → Test File → run & validate → Create PR.
 
 **Input format:**
 ```
@@ -274,6 +276,34 @@ Scenarios:
 ```
 
 See `.claude/skills/test-generator-e2e/SKILL.md` for full workflow and golden rules.
+
+### `/e2e-test-debugger`
+
+Analyze test failures after a test suite run — classify root causes and suggest targeted fixes.
+
+**When to use:** run `npm test` → some tests fail → invoke this skill to understand why.
+
+Handles: collect results → batch classify → deep investigate → suggest fix → verify.
+
+| Category | Action |
+|----------|--------|
+| Locator changed | update `page-objects/*.ts` |
+| Assertion mismatch | update `test-data/` |
+| Auth expired | re-run `npx playwright test --project=setup` |
+| Flaky | add explicit waits |
+| **App regression** | **report only — never change tests to match broken behavior** |
+
+See `.claude/skills/e2e-test-debugger/SKILL.md` for full workflow and golden rules.
+
+### `/create-pr`
+
+Create branch → commit → push → open PR with auto-generated description.
+
+Handles sub-branch strategy when a parent branch has an open unmerged PR.
+
+**When to use:** after tests pass 2 consecutive times, before merging to `main`.
+
+See `.claude/skills/create-pr/SKILL.md` for branch naming conventions and PR title format.
 
 ## Adding a new page
 
