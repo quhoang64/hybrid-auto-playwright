@@ -242,10 +242,13 @@ What next?
   1. Run again              → verify stability
   2. Fix a failing step     → describe what failed
   3. Add more scenarios     → to this feature
-  4. New feature test       → /test-generator
-  5. Done
+  4. New feature test       → /test-generator-e2e
+  5. Create PR              → /create-pr
+  6. Done
 ────────────────────────────────────────
 ```
+
+Option 5 is only shown after 2 consecutive passes. When selected, hand off to the create-pr skill with the feature tag already known from this session.
 
 Wait for user input before taking any action.
 
