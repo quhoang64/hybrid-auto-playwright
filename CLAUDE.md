@@ -305,6 +305,25 @@ Handles sub-branch strategy when a parent branch has an open unmerged PR.
 
 See `.claude/skills/create-pr/SKILL.md` for branch naming conventions and PR title format.
 
+### `/review-pr`
+
+Review a PR (or uncommitted changes) against ALL framework conventions before merging.
+
+**When to use:** before merging a feature branch — run this to catch convention violations, missing checks, or test quality issues.
+
+Handles: automated checks (tsc + lint) → read all changed files → per-type checklists → test quality → PR hygiene → structured severity report → user decides action.
+
+| Checklist | Items |
+|-----------|-------|
+| Page Object | PO-1 to PO-18 (locator pattern, naming, BasePage, no expect, etc.) |
+| Component | CO-1 to CO-10 (no BasePage, constructor pattern, no expect, etc.) |
+| Test File | TF-1 to TF-17 (imports, tags, test.step, assertions, no inline locators, etc.) |
+| Fixture | FX-1 to FX-6 (type registration, await use, no assertions, etc.) |
+
+**Never auto-fixes** — presents findings and waits for user decision (Approve / Request Changes / Fix / Done).
+
+See `.claude/skills/review-pr/SKILL.md` for full checklist and golden rules.
+
 ## Adding a new page
 
 1. Create `page-objects/MyNewPage.ts` extending `BasePage` from `@base/BasePage`
