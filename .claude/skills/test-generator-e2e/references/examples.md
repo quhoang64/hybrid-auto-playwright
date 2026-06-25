@@ -45,69 +45,76 @@ Scenarios: 1 test, 4 steps
 
 ---
 
-## Step 2 — Codegen & Locator Discovery
+## Step 2 — playwright-cli Exploration
 
-**Command printed for user:**
+All commands run by Claude — no user interaction needed.
+
+**Pre-flight:**
 ```bash
-mkdir -p .claude/tmp && npx playwright codegen \
-  --load-storage=playwright/.auth/user.json \
-  --output=.claude/tmp/codegen-output.ts \
-  http://localhost/appointment
+bash .claude/skills/test-generator-e2e/scripts/pre-explore.sh
+# → [pre-explore] OK: Auth state is fresh (4m old, threshold 30m)
 ```
 
-**Raw codegen output (`.claude/tmp/codegen-output.ts`):**
-```typescript
-await page.locator('select#combo_facility').selectOption('Hongkong CURA Healthcare Center');
-await page.locator('input#chk_hospotal_readmission').check();
-await page.locator('input[name="radio_program"][value="Medicaid"]').check();
-await page.locator('input.form-control[placeholder="dd/mm/yyyy"]').click();
-// ... datepicker navigation clicks ...
-await page.locator('textarea#txt_comment').fill('Automated test appointment');
-await page.locator('button#btn-book-appointment').click();
-// confirmation page
-await page.locator('#facility').textContent();
-await page.locator('#hospital_readmission').textContent();
-await page.locator('#program').textContent();
-await page.locator('#visit_date').textContent();
-await page.locator('#comment').textContent();
+**Session setup and form page snapshot:**
+```bash
+npx playwright-cli open
+npx playwright-cli state-load playwright/.auth/user.json
+npx playwright-cli goto https://katalon-demo-cura.herokuapp.com/#appointment
+npx playwright-cli snapshot
+# → Snapshot saved to: /tmp/snapshot-1234.txt  (contains element refs e1, e2, e3...)
+```
+
+**Discovering elements via generate-locator:**
+```bash
+npx playwright-cli generate-locator e5    # → getByRole('combobox', { name: 'Facility' })
+npx playwright-cli generate-locator e8    # → getByRole('checkbox', { name: 'Apply for hospital readmission' })
+npx playwright-cli generate-locator e12   # → getByRole('radio', { name: 'Medicare' })
+npx playwright-cli generate-locator e15   # → getByPlaceholder('dd/mm/yyyy')
+npx playwright-cli generate-locator e18   # → getByRole('textbox', { name: 'Comment' })
+npx playwright-cli generate-locator e22   # → getByRole('button', { name: 'Book Appointment' })
+```
+
+**Navigate through full flow to reach confirmation page:**
+```bash
+npx playwright-cli select e5 "Hongkong CURA Healthcare Center"
+npx playwright-cli check e8
+npx playwright-cli click e13              # Medicaid radio
+npx playwright-cli click e15              # Open datepicker
+# ... datepicker navigation ...
+npx playwright-cli fill e18 "test comment"
+npx playwright-cli click e22             # Book Appointment → navigates to confirmation
+npx playwright-cli snapshot              # Snapshot confirmation page
+npx playwright-cli generate-locator e2  # → locator('#facility')
+npx playwright-cli generate-locator e3  # → locator('#hospital_readmission')
+npx playwright-cli generate-locator e4  # → locator('#program')
+npx playwright-cli generate-locator e5  # → locator('#visit_date')
+npx playwright-cli generate-locator e6  # → locator('#comment')
+npx playwright-cli close
 ```
 
 **Rewritten locators (after applying tier priority):**
 ```
 Form page (/#appointment):
-  facilitySelect       → getByRole('combobox', { name: 'Facility' })
-                          raw: select#combo_facility → has ARIA role combobox + label "Facility"
-  readmissionCheckbox  → getByRole('checkbox', { name: 'Apply for hospital readmission' })
-                          raw: input#chk_hospotal_readmission → has role + label
-  healthcareRadio      → getByRole('radio', { name: data.healthcareProgram })  [parameterized]
-                          raw: input[name="radio_program"] → dynamic, keep inline in method
-  visitDateInput       → getByPlaceholder('dd/mm/yyyy')
-                          raw: input[placeholder="dd/mm/yyyy"] → Tier 3 (no label)
-  commentInput         → getByRole('textbox', { name: 'Comment' })
-                          raw: textarea#txt_comment → has role + label "Comment"
-  bookButton           → getByRole('button', { name: 'Book Appointment' })
-                          raw: button#btn-book-appointment → has role + visible text
+  facilitySelect       → getByRole('combobox', { name: 'Facility' })         Tier 1
+  readmissionCheckbox  → getByRole('checkbox', { name: 'Apply for hospital readmission' })  Tier 1
+  healthcareRadio      → getByRole('radio', { name: data.healthcareProgram }) [parameterized — inline in method]
+  visitDateInput       → getByPlaceholder('dd/mm/yyyy')                       Tier 3 (no label)
+  commentInput         → getByRole('textbox', { name: 'Comment' })            Tier 1
+  bookButton           → getByRole('button', { name: 'Book Appointment' })    Tier 1
 
-Datepicker (Bootstrap — extracted to DatepickerComponent — see page-objects/components/):
-  input                → getByPlaceholder('dd/mm/yyyy')          [trigger, passed to component]
-  switch               → locator('.datepicker-days .datepicker-switch')
-  next                 → locator('.datepicker-days .next')
-  prev                 → locator('.datepicker-days .prev')
-  days                 → locator('.datepicker-days td.day:not(.old):not(.new)')
+Datepicker (Bootstrap — check page-objects/components/ before inlining):
+  → DatepickerComponent already exists, reuse it
 
 Confirmation page (/appointment.php#summary):
-  confirmFacility      → locator('#facility')       no semantic alternative
-  confirmReadmission   → locator('#hospital_readmission')
-  confirmProgram       → locator('#program')
-  confirmVisitDate     → locator('#visit_date')
-  confirmComment       → locator('#comment')
+  confirmFacility      → locator('#facility')             Tier 5 (no semantic alternative)
+  confirmReadmission   → locator('#hospital_readmission') Tier 5
+  confirmProgram       → locator('#program')              Tier 5
+  confirmVisitDate     → locator('#visit_date')           Tier 5
+  confirmComment       → locator('#comment')              Tier 5
 ```
 
-> Note: `healthcareRadio` is parameterized — value changes per test run. Cannot be a static
-> constructor field. Used inline in `fillForm()`: `this.page.getByRole('radio', { name: data.healthcareProgram })`
->
-> Note: Datepicker already extracted to `DatepickerComponent` — check `page-objects/components/`
-> before inlining any datepicker logic into the Page Object.
+> `healthcareRadio` is parameterized — value changes per test run. Cannot be a static
+> constructor field. Used inline in `fillForm()` as `this.page.getByRole('radio', { name: data.healthcareProgram })`
 
 ---
 

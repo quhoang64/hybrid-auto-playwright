@@ -76,49 +76,71 @@ Scenarios: 1 test, 4 steps
 
 ### Step 2 — Explore UI
 
-Use `playwright codegen` to capture locators. Always capture BOTH pages — form AND confirmation.
+Use `playwright-cli` to explore the UI. Claude runs all commands — no user interaction needed.
+Always capture BOTH pages: form page AND confirmation/result page.
 
-#### Step 2a — Print codegen command
-
-Read `BASE_URL` from `.env`, then print this for the user to run:
+#### Step 2a — Pre-flight check
 
 ```bash
-mkdir -p .claude/tmp && npx playwright codegen \
-  --load-storage=playwright/.auth/user.json \
-  --output=.claude/tmp/codegen-output.ts \
-  <BASE_URL><URL>
+bash .claude/skills/test-generator-e2e/scripts/pre-explore.sh
 ```
 
-Then tell the user:
+This checks auth freshness (`playwright/.auth/user.json`). If stale or missing, it re-runs `--project=setup` automatically.
 
+#### Step 2b — Open session and navigate
+
+```bash
+npx playwright-cli open
+npx playwright-cli state-load playwright/.auth/user.json
+npx playwright-cli goto <BASE_URL><URL>
+npx playwright-cli snapshot
 ```
-Run the command above. In the browser that opens:
-  1. Fill every field on the form page
-  2. Submit the form — stay on the confirmation/result page before closing
-  3. Close the codegen window when done
-  4. Type "done" when finished
+
+Read the snapshot file to get element refs (e1, e2, e15...). Use refs in all subsequent commands.
+
+#### Step 2c — Explore form page
+
+Interact with every element on the form to discover its role and label:
+
+```bash
+npx playwright-cli snapshot                        # Get all element refs on form page
+npx playwright-cli screenshot                      # Visual reference
+npx playwright-cli hover {dropdownRef}             # Expand dropdowns/menus if needed
+npx playwright-cli snapshot                        # Re-snapshot after hover
 ```
 
-**WAIT for user to type "done" before continuing.**
+#### Step 2d — Navigate through full flow to confirmation page
 
-#### Step 2b — Read & rewrite locators
+Fill the form and submit to reach the confirmation/result page:
 
-After user confirms:
+```bash
+npx playwright-cli fill {inputRef} "test value"
+npx playwright-cli select {dropdownRef} "option"
+npx playwright-cli check {checkboxRef}
+npx playwright-cli click {submitButtonRef}
+npx playwright-cli snapshot                        # Snapshot confirmation page
+npx playwright-cli screenshot                      # Visual reference
+```
 
-1. Read `.claude/tmp/codegen-output.ts`
-2. Extract every locator — ignore fill values, click coordinates, assertion lines
-3. Rewrite each raw locator to the highest applicable tier:
+#### Step 2e — Command reference
 
-| Raw codegen output | Rewrite to |
-|---|---|
-| `page.locator('#some-btn')` | `page.getByRole('button', { name: '...' })` if has ARIA role |
-| `page.locator('select')` | `page.getByRole('combobox', { name: '...' })` |
-| `page.locator('input[type="checkbox"]')` | `page.getByRole('checkbox', { name: '...' })` |
-| `page.locator('[placeholder="..."]')` | `page.getByPlaceholder('...')` |
-| `page.locator('label >> input')` | `page.getByLabel('...')` |
-| `page.locator('#id')` | keep as `locator('#id')` — only when no semantic alternative exists |
+| Category | Commands |
+|----------|----------|
+| Navigate | `goto <url>`, `go-back`, `reload` |
+| Snapshot | `snapshot`, `snapshot --filename=name` |
+| Screenshot | `screenshot`, `screenshot {ref}` |
+| Click/Hover | `click {ref}`, `hover {ref}`, `dblclick {ref}` |
+| Fill/Type | `fill {ref} <text>`, `type <text>` |
+| Form | `select {ref} <value>`, `check {ref}`, `uncheck {ref}` |
+| Keyboard | `press <key>` (Enter, Escape, Tab, ArrowDown) |
+| Evaluate | `eval "() => document.title"`, `eval "(el) => el.textContent" {ref}` |
+| Tabs | `tab-list`, `tab-new [url]`, `tab-select <index>` |
+| Storage | `state-load <file>`, `state-save [file]` |
+| Cleanup | `close` |
 
-Locator tier priority:
+#### Step 2f — Rewrite locators to tier priority
+
+After exploration, map every discovered element to the highest applicable locator tier:
 
 | Tier | Method | When |
 |------|--------|------|
@@ -126,12 +148,14 @@ Locator tier priority:
 | 2 | `getByLabel` | form fields with a visible label |
 | 3 | `getByPlaceholder` | inputs with placeholder text |
 | 4 | `getByText` | static text / labels with no role |
-| 5 | `locator(css)` | last resort — shadow DOM, custom components, no other option |
+| 5 | `locator(css)` | last resort — no semantic alternative exists |
 
-4. Split locators by page URL — form page vs confirmation page
-5. Assign camelCase field names
+Use `generate-locator {ref}` to get Playwright's suggested locator for any element:
+```bash
+npx playwright-cli generate-locator {ref}
+```
 
-Present grouped by page:
+Present all discovered locators grouped by page:
 
 ```
 Form page (/<url>):
@@ -147,6 +171,11 @@ Confirmation page (/result-url):
   confirmProgram       → locator('#program')
   confirmVisitDate     → locator('#visit_date')
   confirmComment       → locator('#comment')
+```
+
+Close the session after exploration:
+```bash
+npx playwright-cli close
 ```
 
 **WAIT for user confirmation before proceeding.**
