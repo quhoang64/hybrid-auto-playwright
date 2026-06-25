@@ -45,33 +45,69 @@ Scenarios: 1 test, 4 steps
 
 ---
 
-## Step 2 — Discovered Locators
+## Step 2 — Codegen & Locator Discovery
 
+**Command printed for user:**
+```bash
+mkdir -p .claude/tmp && npx playwright codegen \
+  --load-storage=playwright/.auth/user.json \
+  --output=.claude/tmp/codegen-output.ts \
+  http://localhost/appointment
+```
+
+**Raw codegen output (`.claude/tmp/codegen-output.ts`):**
+```typescript
+await page.locator('select#combo_facility').selectOption('Hongkong CURA Healthcare Center');
+await page.locator('input#chk_hospotal_readmission').check();
+await page.locator('input[name="radio_program"][value="Medicaid"]').check();
+await page.locator('input.form-control[placeholder="dd/mm/yyyy"]').click();
+// ... datepicker navigation clicks ...
+await page.locator('textarea#txt_comment').fill('Automated test appointment');
+await page.locator('button#btn-book-appointment').click();
+// confirmation page
+await page.locator('#facility').textContent();
+await page.locator('#hospital_readmission').textContent();
+await page.locator('#program').textContent();
+await page.locator('#visit_date').textContent();
+await page.locator('#comment').textContent();
+```
+
+**Rewritten locators (after applying tier priority):**
 ```
 Form page (/#appointment):
   facilitySelect       → getByRole('combobox', { name: 'Facility' })
+                          raw: select#combo_facility → has ARIA role combobox + label "Facility"
   readmissionCheckbox  → getByRole('checkbox', { name: 'Apply for hospital readmission' })
+                          raw: input#chk_hospotal_readmission → has role + label
   healthcareRadio      → getByRole('radio', { name: data.healthcareProgram })  [parameterized]
+                          raw: input[name="radio_program"] → dynamic, keep inline in method
   visitDateInput       → getByPlaceholder('dd/mm/yyyy')
+                          raw: input[placeholder="dd/mm/yyyy"] → Tier 3 (no label)
   commentInput         → getByRole('textbox', { name: 'Comment' })
+                          raw: textarea#txt_comment → has role + label "Comment"
   bookButton           → getByRole('button', { name: 'Book Appointment' })
+                          raw: button#btn-book-appointment → has role + visible text
 
-Datepicker (Bootstrap — opens on visitDateInput click):
-  datepickerSwitch     → locator('.datepicker-days .datepicker-switch')
-  datepickerNext       → locator('.datepicker-days .next')
-  datepickerPrev       → locator('.datepicker-days .prev')
-  datepickerDays       → locator('.datepicker-days td.day:not(.old):not(.new)')
+Datepicker (Bootstrap — extracted to DatepickerComponent — see page-objects/components/):
+  input                → getByPlaceholder('dd/mm/yyyy')          [trigger, passed to component]
+  switch               → locator('.datepicker-days .datepicker-switch')
+  next                 → locator('.datepicker-days .next')
+  prev                 → locator('.datepicker-days .prev')
+  days                 → locator('.datepicker-days td.day:not(.old):not(.new)')
 
 Confirmation page (/appointment.php#summary):
-  confirmFacility      → locator('#facility')
+  confirmFacility      → locator('#facility')       no semantic alternative
   confirmReadmission   → locator('#hospital_readmission')
   confirmProgram       → locator('#program')
   confirmVisitDate     → locator('#visit_date')
   confirmComment       → locator('#comment')
 ```
 
-> Note: `healthcareRadio` is parameterized — not stored as a constructor field because the
-> value changes per test run. Used inline: `page.getByRole('radio', { name: data.healthcareProgram })`
+> Note: `healthcareRadio` is parameterized — value changes per test run. Cannot be a static
+> constructor field. Used inline in `fillForm()`: `this.page.getByRole('radio', { name: data.healthcareProgram })`
+>
+> Note: Datepicker already extracted to `DatepickerComponent` — check `page-objects/components/`
+> before inlining any datepicker logic into the Page Object.
 
 ---
 

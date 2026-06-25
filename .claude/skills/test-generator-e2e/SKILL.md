@@ -1,7 +1,7 @@
 ---
 name: test-generator-e2e
 description: Generates Playwright E2E tests for this hybrid framework. Use when user wants to create new tests or automate a new feature. Invoked with /test-generator-e2e.
-allowed-tools: Read, Write, Edit, Bash, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_fill_form, mcp__playwright__browser_type, mcp__playwright__browser_press_key, mcp__playwright__browser_evaluate, mcp__playwright__browser_take_screenshot
+allowed-tools: Read, Write, Edit, Bash
 ---
 
 # Test Generator
@@ -76,32 +76,72 @@ Scenarios: 1 test, 4 steps
 
 ### Step 2 — Explore UI
 
-Use Playwright MCP to explore. Always capture BOTH:
+Use `playwright codegen` to capture locators. Always capture BOTH pages — form AND confirmation.
 
-1. **Form / action page** — all interactive elements (inputs, buttons, selects, checkboxes, radios)
-2. **Result / confirmation page** — all assertion targets (navigate through the full user flow to get there)
+#### Step 2a — Print codegen command
 
-Locator priority — always use the highest available tier:
+Read `BASE_URL` from `.env`, then print this for the user to run:
 
-| Tier | Locator | When |
-|------|---------|------|
-| 1 | `getByRole` | buttons, inputs, comboboxes, checkboxes, radios, headings, links |
-| 2 | `getByLabel` | labeled form fields |
-| 3 | `getByPlaceholder` | inputs with placeholder text |
-| 4 | `getByText` | static text / labels |
-| 5 | `locator(css)` | last resort — only when no semantic locator works |
+```bash
+mkdir -p .claude/tmp && npx playwright codegen \
+  --load-storage=playwright/.auth/user.json \
+  --output=.claude/tmp/codegen-output.ts \
+  <BASE_URL><URL>
+```
 
-Present all discovered locators grouped by page:
+Then tell the user:
 
 ```
-Form page (/#appointment):
+Run the command above. In the browser that opens:
+  1. Fill every field on the form page
+  2. Submit the form — stay on the confirmation/result page before closing
+  3. Close the codegen window when done
+  4. Type "done" when finished
+```
+
+**WAIT for user to type "done" before continuing.**
+
+#### Step 2b — Read & rewrite locators
+
+After user confirms:
+
+1. Read `.claude/tmp/codegen-output.ts`
+2. Extract every locator — ignore fill values, click coordinates, assertion lines
+3. Rewrite each raw locator to the highest applicable tier:
+
+| Raw codegen output | Rewrite to |
+|---|---|
+| `page.locator('#some-btn')` | `page.getByRole('button', { name: '...' })` if has ARIA role |
+| `page.locator('select')` | `page.getByRole('combobox', { name: '...' })` |
+| `page.locator('input[type="checkbox"]')` | `page.getByRole('checkbox', { name: '...' })` |
+| `page.locator('[placeholder="..."]')` | `page.getByPlaceholder('...')` |
+| `page.locator('label >> input')` | `page.getByLabel('...')` |
+| `page.locator('#id')` | keep as `locator('#id')` — only when no semantic alternative exists |
+
+Locator tier priority:
+
+| Tier | Method | When |
+|------|--------|------|
+| 1 | `getByRole` | buttons, inputs, comboboxes, checkboxes, radios, headings, links |
+| 2 | `getByLabel` | form fields with a visible label |
+| 3 | `getByPlaceholder` | inputs with placeholder text |
+| 4 | `getByText` | static text / labels with no role |
+| 5 | `locator(css)` | last resort — shadow DOM, custom components, no other option |
+
+4. Split locators by page URL — form page vs confirmation page
+5. Assign camelCase field names
+
+Present grouped by page:
+
+```
+Form page (/<url>):
   facilitySelect       → getByRole('combobox', { name: 'Facility' })
   readmissionCheckbox  → getByRole('checkbox', { name: 'Apply for hospital readmission' })
   visitDateInput       → getByPlaceholder('dd/mm/yyyy')
   commentInput         → getByRole('textbox', { name: 'Comment' })
   bookButton           → getByRole('button', { name: 'Book Appointment' })
 
-Confirmation page (/appointment.php#summary):
+Confirmation page (/result-url):
   confirmFacility      → locator('#facility')
   confirmReadmission   → locator('#hospital_readmission')
   confirmProgram       → locator('#program')
