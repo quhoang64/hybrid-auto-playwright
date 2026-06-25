@@ -82,6 +82,9 @@ global-setup.ts           runs first — validates .env before anything else
 .claude/
   skills/
     test-generator-e2e/   skill to generate tests — invoke with /test-generator-e2e
+    e2e-test-debugger/    skill to debug test failures — invoke with /e2e-test-debugger
+    create-pr/            skill to create branch + commit + PR — invoke with /create-pr
+    review-pr/            skill to review PR conventions — invoke with /review-pr
 ```
 
 ## Layer responsibilities
