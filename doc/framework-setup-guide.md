@@ -742,7 +742,10 @@ tests/
   auth.setup.ts
 .claude/
   skills/
-    test-generator-e2e/   skill tự động generate test
+    test-generator-e2e/   skill tự động generate test (playwright-cli + MCP fallback)
+    e2e-test-debugger/    skill debug test failures
+    create-pr/            skill tạo branch + commit + PR
+    review-pr/            skill review PR theo framework conventions
 doc/                framework-setup-guide.md
 ```
 
@@ -853,20 +856,29 @@ mô tả rõ ràng. Tất cả assertions gom vào test.step('N. Verify ...')
 
 Sau khi framework hoàn chỉnh, tạo Claude Code skill để tự động generate test từ natural language spec.
 
+**Cài thêm package:**
+```bash
+npm install --save-dev @playwright/cli
+```
+
 **Tạo cấu trúc:**
 ```
 .claude/
   skills/
     test-generator-e2e/
       SKILL.md           ← workflow + golden rules
+      scripts/
+        pre-explore.sh   ← check auth freshness trước khi explore
       references/
         templates.md     ← code templates
-        examples.md      ← worked example
+        examples.md      ← worked example (có raw playwright-cli output)
 ```
 
 **Skill làm gì:**
 1. Nhận spec dạng natural language
-2. Explore UI bằng Playwright MCP để lấy locators
+2. Explore UI để lấy locators:
+   - **Primary:** `playwright-cli` — Claude tự chạy bash commands, persistent browser session, ~100 tokens/command. `pre-explore.sh` tự check + refresh auth nếu stale.
+   - **Fallback:** Playwright MCP — dùng khi `playwright-cli` không capture được element (shadow DOM, iframe, animation phức tạp)
 3. Generate Page Object + Test Data + Test File theo đúng framework conventions
 4. Chạy tsc + lint + test để verify
 5. Prompt chaining menu sau mỗi lần chạy
