@@ -261,6 +261,10 @@ Auto-generate a full test from a natural language spec.
 
 Handles: UI exploration → Page Object → Test Data → fixture analysis → Test File → run & validate → Create PR.
 
+**UI exploration (Step 2):**
+- Primary: `playwright-cli` — Claude runs bash commands, persistent session, ~100 tokens/command
+- Fallback: Playwright MCP — used when CLI cannot capture an element (shadow DOM, iframe, complex animation)
+
 **Input format:**
 ```
 Feature: [feature name]
