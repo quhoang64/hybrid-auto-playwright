@@ -9,10 +9,10 @@ export class HistoryPage extends BasePage {
     this.panels = page.locator('.panel.panel-info');
   }
 
-  getAppointment(visitDate: string) {
-    const panel = this.panels.filter({
-      has: this.page.locator('.panel-heading', { hasText: visitDate }),
-    });
+  getAppointment(visitDate: string, comment: string) {
+    const panel = this.panels
+      .filter({ has: this.page.locator('.panel-heading', { hasText: visitDate }) })
+      .filter({ has: this.page.locator('#comment', { hasText: comment }) });
     return {
       visitDate: panel.locator('.panel-heading'),
       facility: panel.locator('#facility'),

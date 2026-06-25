@@ -25,7 +25,7 @@ export function generateAppointmentData(overrides?: Partial<AppointmentData>): A
     readmission: true,
     healthcareProgram: 'Medicaid',
     visitDate: `${dd}/${mm}/${yyyy}`,
-    comment: 'Automated test appointment',
+    comment: `Automated test appointment ${Date.now()}`,
     ...overrides,
   };
 }

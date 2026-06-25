@@ -12,7 +12,10 @@ test.describe('History Appointment', { tag: ['@regression', '@history-appointmen
     });
 
     await test.step('2. Verify appointment history matches submitted data', async () => {
-      const appointment = historyPage.getAppointment(bookedAppointment.visitDate);
+      const appointment = historyPage.getAppointment(
+        bookedAppointment.visitDate,
+        bookedAppointment.comment,
+      );
       await expect(appointment.visitDate).toHaveText(bookedAppointment.visitDate);
       await expect(appointment.facility).toHaveText(bookedAppointment.facility);
       await expect(appointment.readmission).toHaveText(
