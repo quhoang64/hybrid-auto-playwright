@@ -1,7 +1,7 @@
 ---
 name: test-generator-e2e
 description: Generates Playwright E2E tests for this hybrid framework. Use when user wants to create new tests or automate a new feature. Invoked with /test-generator-e2e.
-allowed-tools: Read, Write, Edit, Bash
+allowed-tools: Read, Write, Edit, Bash, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_fill_form, mcp__playwright__browser_type, mcp__playwright__browser_press_key, mcp__playwright__browser_evaluate, mcp__playwright__browser_take_screenshot
 ---
 
 # Test Generator
@@ -177,6 +177,17 @@ Close the session after exploration:
 ```bash
 npx playwright-cli close
 ```
+
+#### Fallback: Playwright MCP
+
+Switch to Playwright MCP when `playwright-cli` cannot reliably capture an element:
+
+- `snapshot` returns no useful refs for a specific element
+- `generate-locator` produces an unstable or empty locator
+- Element is inside a shadow DOM, custom web component, or complex iframe
+- Element only appears after animation/hover that CLI handles poorly
+
+Use MCP tools (`browser_navigate`, `browser_snapshot`, `browser_click`, `browser_take_screenshot`) to interact with the browser visually. Apply the same tier priority for locator selection. Switch back to CLI for any elements it can handle.
 
 **WAIT for user confirmation before proceeding.**
 
