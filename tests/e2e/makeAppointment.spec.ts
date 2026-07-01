@@ -2,12 +2,11 @@ import { test, expect } from '@fixtures';
 import { generateAppointmentData } from '@test-data/AppointmentData';
 
 test.describe('Make Appointment', () => {
-  test('book appointment and verify confirmation', async ({ pageManager }) => {
+  test('book appointment and verify confirmation', async ({ navigationPage, appointmentPage }) => {
     const data = generateAppointmentData();
-    const appointmentPage = pageManager.onAppointmentPage();
 
     await test.step('1. Navigate to Make Appointment page', async () => {
-      await pageManager.onNavigationPage().navigateToMakeAppointment();
+      await navigationPage.navigateToMakeAppointment();
     });
 
     await test.step('2. Fill appointment form', async () => {

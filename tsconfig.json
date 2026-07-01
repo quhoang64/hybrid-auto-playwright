@@ -10,7 +10,6 @@
     "paths": {
       "@base/*": ["base/*"],
       "@page-objects/*": ["page-objects/*"],
-      "@page-manager/*": ["page-manager/*"],
       "@fixtures": ["fixtures/index"],
       "@helpers/*": ["helpers/*"],
       "@test-data/*": ["test-data/*"],
@@ -20,7 +19,6 @@
   "include": [
     "base/**/*.ts",
     "page-objects/**/*.ts",
-    "page-manager/**/*.ts",
     "fixtures/**/*.ts",
     "helpers/**/*.ts",
     "test-data/**/*.ts",

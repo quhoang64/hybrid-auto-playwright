@@ -87,27 +87,24 @@ export class NavigationPage extends BasePage {
 
 ---
 
-## 3. PageManager Update
+## 3. Fixtures Registration
 
-Add a private field + getter for every new Page Object:
+Add every new Page Object to `fixtures/index.ts` — one entry in the type, one fixture implementation:
 
 ```typescript
-import { Page } from '@playwright/test';
-import { NavigationPage } from '@page-objects/NavigationPage';
 import { XxxPage } from '@page-objects/XxxPage';              // ← add import
 
-export class PageManager {
-  private readonly navigationPage: NavigationPage;
-  private readonly xxxPage: XxxPage;                          // ← add field
+type TestFixtures = {
+  // ... existing fixtures
+  xxxPage: XxxPage;                                           // ← add to type
+};
 
-  constructor(page: Page) {
-    this.navigationPage = new NavigationPage(page);
-    this.xxxPage = new XxxPage(page);                         // ← add init
-  }
-
-  onNavigationPage() { return this.navigationPage; }
-  onXxxPage() { return this.xxxPage; }                        // ← add getter
-}
+export const test = base.extend<TestFixtures>({
+  // ... existing fixtures
+  xxxPage: async ({ page }, use) => {                         // ← add fixture
+    await use(new XxxPage(page));
+  },
+});
 ```
 
 ---
@@ -172,12 +169,11 @@ import { test, expect } from '@fixtures';
 import { generateXxxData } from '@test-data/XxxData';
 
 test.describe('Feature Name', { tag: ['@smoke', '@feature-xxx'] }, () => {
-  test('scenario name — what the user can do', async ({ pageManager }) => {
+  test('scenario name — what the user can do', async ({ navigationPage, xxxPage }) => {
     const data = generateXxxData();
-    const xxxPage = pageManager.onXxxPage();
 
     await test.step('1. Navigate to feature page', async () => {
-      await pageManager.onNavigationPage().navigateToXxx();
+      await navigationPage.navigateToXxx();
     });
 
     await test.step('2. Fill form', async () => {
@@ -201,7 +197,7 @@ test.describe('Feature Name', { tag: ['@smoke', '@feature-xxx'] }, () => {
 - Tags on `test.describe`: `['@priority', '@feature-tag']`
 - Every logical group wrapped in `test.step('N. Description', ...)`
 - All assertions inside `test.step('N. Verify ...')`
-- Use `pageManager.onXxxPage()` — **NEVER** `new XxxPage(page)`
+- Declare only the fixtures the test needs — `{ navigationPage, xxxPage }` — **NEVER** `new XxxPage(page)`
 - Dynamic data via factory function (`generateXxxData()`)
 - Static data via `loadTestData<T>('xxx.json')` from `@helpers/DataLoader`
 

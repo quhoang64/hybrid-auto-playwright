@@ -54,15 +54,15 @@ page-objects/
   NavigationPage.ts
   FormLayoutsPage.ts
   DatepickerPage.ts
-page-manager/
-  PageManager.ts
 fixtures/
-  index.ts
+  index.ts            ← DI layer: mỗi Page Object là 1 Playwright fixture
 helpers/              ← trống, dành cho utils sau này
 tests/
   usePageObjects.spec.ts
   testSuite1.spec.ts
 ```
+
+> **Lưu ý:** PageManager từng là một layer riêng (orchestrator giữ tất cả page objects). Đã loại bỏ vì Playwright fixtures đã là DI container — PageManager là layer thừa. Fixture giờ đăng ký từng Page Object trực tiếp, test khai báo chỉ những gì cần.
 
 **Lý do chọn cấu trúc này:**
 
@@ -70,8 +70,7 @@ tests/
 |---|---|
 | `base/` | BasePage là foundation, không phải concrete page — đặt riêng tránh nhầm |
 | `page-objects/` | Chỉ chứa concrete pages, rõ ràng hơn tên `pages/` |
-| `page-manager/` | Orchestrator layer riêng, phản ánh đúng diagram kiến trúc |
-| `fixtures/` | Glue layer giữa Playwright và framework |
+| `fixtures/` | DI layer — đăng ký Page Objects + ApiManager, inject lazy vào tests |
 | `helpers/` | Reserved cho date utils, random data, string utils... |
 
 ---
@@ -713,7 +712,7 @@ Bạn không cần đụng vào code — chỉ cần mô tả form login là xon
 
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
-| Thêm page mới | Tạo `page-objects/MyPage.ts`, thêm vào `PageManager` |
+| Thêm page mới | Tạo `page-objects/MyPage.ts`, đăng ký fixture trong `fixtures/index.ts`, thêm `navigateToMyPage()` vào `NavigationPage` |
 | Thêm API endpoint mới | Tạo `api/MyApi.ts`, thêm vào `ApiManager` |
 | Thêm precondition / teardown | Thêm fixture mới vào `fixtures/index.ts` |
 | Thêm test data model | Tạo `test-data/MyData.ts` với interface + factory function |
@@ -730,9 +729,8 @@ Bạn không cần đụng vào code — chỉ cần mô tả form login là xon
 ```
 base/               BasePage.ts
 page-objects/       NavigationPage.ts, AppointmentPage.ts, ...
-page-manager/       PageManager.ts
 api/                BaseApi.ts, ApiManager.ts, ...
-fixtures/           index.ts  (pageManager + apiManager + loggedInPage)
+fixtures/           index.ts  (mỗi Page Object là 1 fixture + apiManager + loggedInPage)
 test-data/          AppointmentData.ts, ...
                     common/*.json  (static data)
 helpers/            DataLoader.ts, EnvValidator.ts

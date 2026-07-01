@@ -61,7 +61,7 @@ Files to create:
 
 Files to update:
   page-objects/NavigationPage.ts         add navigateToMakeAppointment()
-  page-manager/PageManager.ts            add onAppointmentPage()
+  fixtures/index.ts                      register AppointmentPage fixture
 
 Components:
   page-objects/components/DatepickerComponent.ts   REUSE   ← datepicker already extracted
@@ -211,7 +211,7 @@ Present the full code → **WAIT for user confirmation before writing any file.*
 After confirmed, in order:
 1. Write `page-objects/XxxPage.ts`
 2. Update `page-objects/NavigationPage.ts` — add `navigateToXxx()` method + locator in constructor
-3. Update `page-manager/PageManager.ts` — add `private readonly xxxPage` field + `onXxxPage()` getter
+3. Update `fixtures/index.ts` — add `xxxPage: XxxPage` to `TestFixtures` type + fixture implementation
 4. Run `npx tsc --noEmit` then `npm run lint`
 5. Report results. If errors → show full output, NEVER auto-fix, ask user how to proceed.
 
@@ -287,7 +287,7 @@ Rules:
 - `test.describe('Feature Name', { tag: ['@priority', '@feature-tag'] }, () => { ... })`
 - Each logical group of actions wrapped in a numbered `test.step()`
 - All assertions inside `test.step('N. Verify ...')`
-- Use `pageManager.onXxxPage()` — NEVER `new XxxPage(page)` in test files
+- Declare only the fixtures the test needs — `{ navigationPage, xxxPage }` — NEVER `new XxxPage(page)` in test files
 - Dynamic data via factory function, static data via `loadTestData()` if JSON file exists
 
 Present the full code → **WAIT for user confirmation before writing any file.**
@@ -341,10 +341,10 @@ Wait for user input before taking any action.
 3. **NEVER auto-fix** — show errors, present options, let user decide
 4. **NEVER inline locators in test files** — all locators live in Page Objects only
 5. **NEVER import from `@playwright/test`** — always use `@fixtures`
-6. **NEVER use `new XxxPage(page)` in tests** — always use `pageManager.onXxxPage()`
+6. **NEVER use `new XxxPage(page)` in tests** — always use injected fixtures
 7. **NEVER skip confirmation page exploration** — need locators for assertions
 8. **ALWAYS run `tsc + lint` after writing files** — catch errors before test run
 9. **ALWAYS confirm stability with 2 consecutive passes**
-10. **ALWAYS update NavigationPage + PageManager** when adding a new page
+10. **ALWAYS update NavigationPage + fixtures/index.ts** when adding a new page
 11. **ALWAYS run Step 4.5 fixture analysis** — never skip it, even if no fixture is needed; always show the recommendation and wait for confirmation before writing the test file
 12. **NEVER create a fixture** without explicit user confirmation — present the recommendation, explain the tradeoff, let user decide

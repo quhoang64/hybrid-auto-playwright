@@ -50,7 +50,7 @@ npm run format
 
 ## Architecture
 
-Hybrid framework (UI + API): Tests → Fixtures → Managers → Objects → Base
+Hybrid framework (UI + API): Tests → Fixtures → Objects → Base
 
 ```
 base/
@@ -59,14 +59,12 @@ page-objects/
   components/
     *Component.ts         reusable UI components (datepicker, modal…) — used by Page Objects
   *Page.ts                one file per page, extends BasePage
-page-manager/
-  PageManager.ts          single entry point to all page objects
 api/
   BaseApi.ts              foundation for all API classes
   *Api.ts                 one file per API domain, extends BaseApi
   ApiManager.ts           single entry point to all API classes
 fixtures/
-  index.ts                injects pageManager + apiManager + loggedInPage into tests
+  index.ts                registers all Page Objects + apiManager as Playwright fixtures
 test-data/
   common/
     *.json                static test data — reproducible, use when need fixed data
@@ -92,10 +90,9 @@ global-setup.ts           runs first — validates .env before anything else
 - **BasePage** — holds `page: Page` and shared helpers. Never instantiated directly.
 - **Components** (`page-objects/components/`) — reusable UI widgets shared across multiple pages (e.g. `DatepickerComponent`). Not a BasePage subclass — instantiated directly inside Page Object constructors. Extract to a component when the same UI element appears on 2+ pages.
 - **Page Objects** — encapsulate locators and user actions for one page. All locators declared as `private readonly` fields in the constructor. Methods named after business actions (e.g. `fillForm`, `bookAppointment`), not UI steps.
-- **PageManager** — owns one instance of every Page Object. Methods prefixed `on`. Tests never instantiate Page Objects directly.
 - **BaseApi** — holds `request: APIRequestContext`. All API classes extend this.
 - **ApiManager** — owns one instance of every API class. Methods prefixed `on`.
-- **Fixtures** (`fixtures/index.ts`) — extends Playwright's `test` with `pageManager`, `apiManager`, `loggedInPage`. Always import `test`/`expect` from `@fixtures`, never from `@playwright/test` directly.
+- **Fixtures** (`fixtures/index.ts`) — the DI layer. Each Page Object and ApiManager is registered as a Playwright fixture. Tests declare only the fixtures they need — Playwright instantiates lazily. Always import `test`/`expect` from `@fixtures`, never from `@playwright/test` directly.
 
 ## Page Object — locator pattern
 
@@ -187,7 +184,7 @@ export class ReschedulePage extends BasePage {
 
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
-| Thêm page mới | Tạo `page-objects/MyPage.ts`, thêm vào `PageManager` + `NavigationPage` |
+| Thêm page mới | Tạo `page-objects/MyPage.ts`, đăng ký fixture trong `fixtures/index.ts`, thêm `navigateToMyPage()` vào `NavigationPage` |
 | Thêm UI component dùng chung (2+ pages) | Tạo `page-objects/components/MyComponent.ts`, dùng trong Page Object constructor |
 | Thêm API endpoint mới | Tạo `api/MyApi.ts`, thêm vào `ApiManager` |
 | Thêm precondition / teardown | Thêm fixture mới vào `fixtures/index.ts` |
@@ -205,12 +202,11 @@ import { test, expect } from '@fixtures';
 import { generateAppointmentData } from '@test-data/AppointmentData'; // dynamic (faker)
 
 test.describe('Feature Name', { tag: ['@smoke', '@feature-tag'] }, () => {
-  test('scenario name', async ({ pageManager }) => {
+  test('scenario name', async ({ navigationPage, appointmentPage }) => {
     const data = generateAppointmentData();
-    const appointmentPage = pageManager.onAppointmentPage();
 
     await test.step('1. Navigate to page', async () => {
-      await pageManager.onNavigationPage().navigateToMakeAppointment();
+      await navigationPage.navigateToMakeAppointment();
     });
 
     await test.step('2. Fill form', async () => {
@@ -231,7 +227,8 @@ test.describe('Feature Name', { tag: ['@smoke', '@feature-tag'] }, () => {
 **Rules:**
 - Wrap every logical group in `test.step('N. Description', ...)`
 - All assertions go inside `test.step('N. Verify ...')`
-- Use `pageManager.onXxxPage()` — never `new XxxPage(page)`
+- Declare only the Page Object fixtures you need — Playwright injects them automatically
+- Never use `new XxxPage(page)` directly in tests
 
 ## Hybrid pattern (API setup → UI verify → API teardown)
 
@@ -335,7 +332,7 @@ See `.claude/skills/review-pr/SKILL.md` for full checklist and golden rules.
 
 1. Create `page-objects/MyNewPage.ts` extending `BasePage` from `@base/BasePage`
 2. Add `navigateToMyNew()` in `page-objects/NavigationPage.ts` (locator in constructor)
-3. Add private field + `onMyNewPage()` getter in `page-manager/PageManager.ts`
+3. Register fixture in `fixtures/index.ts` — add type to `TestFixtures` + fixture implementation
 
 ## Adding a new API class
 

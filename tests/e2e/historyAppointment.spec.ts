@@ -2,13 +2,12 @@ import { test, expect } from '@fixtures';
 
 test.describe('History Appointment', { tag: ['@regression', '@history-appointment'] }, () => {
   test('Verify that the user can see the history appointment after submitting the form', async ({
-    pageManager,
+    navigationPage,
+    historyPage,
     bookedAppointment,
   }) => {
-    const historyPage = pageManager.onHistoryPage();
-
     await test.step('1. Navigate to History via menu', async () => {
-      await pageManager.onNavigationPage().navigateToHistory();
+      await navigationPage.navigateToHistory();
     });
 
     await test.step('2. Verify appointment history matches submitted data', async () => {

@@ -17,15 +17,14 @@ A production-ready E2E automation framework built with Playwright and TypeScript
 ## Architecture
 
 ```
-Tests → Fixtures → PageManager / ApiManager → PageObjects / ApiClasses → BasePage / BaseApi
+Tests → Fixtures → PageObjects / ApiClasses → BasePage / BaseApi
 ```
 
 ```
 base/               BasePage.ts — foundation for all Page Objects
 page-objects/       *Page.ts — one file per page, extends BasePage
-page-manager/       PageManager.ts — single entry point to all page objects
 api/                BaseApi.ts, *Api.ts, ApiManager.ts — API request layer
-fixtures/           index.ts — injects pageManager, apiManager, loggedInPage
+fixtures/           index.ts — registers all Page Objects + apiManager as Playwright fixtures
 test-data/
   common/           *.json — static test data (reproducible)
   *Data.ts          faker factories — dynamic test data
@@ -81,25 +80,24 @@ Always import `test` and `expect` from `@fixtures`:
 
 ```typescript
 import { test, expect } from '@fixtures';
-import { generateUser } from '@test-data/UserData';
+import { generateAppointmentData } from '@test-data/AppointmentData';
 
-test('submit form', async ({ pageManager }) => {
-  const user = generateUser();
-  await pageManager.onNavigationPage().navigateToFormLayouts();
-  await pageManager.onFormLayoutsPage().submitInlineFormWithNameAndEmail(
-    user.name,
-    user.email,
-  );
+test('book appointment', async ({ navigationPage, appointmentPage }) => {
+  const data = generateAppointmentData();
+  await navigationPage.navigateToMakeAppointment();
+  await appointmentPage.fillForm(data);
+  await appointmentPage.bookAppointment();
+  await expect(appointmentPage.confirmFacility).toHaveText(data.facility);
 });
 ```
 
 ### Hybrid pattern — API setup + UI verify
 
 ```typescript
-test('create user and verify on UI', async ({ pageManager, apiManager }) => {
+test('create user and verify on UI', async ({ navigationPage, apiManager }) => {
   const user = generateUser();
   const created = await apiManager.onUserApi().createUser(user); // fast, no UI
-  // verify on UI via pageManager ...
+  // verify on UI via navigationPage / other page fixtures ...
   await apiManager.onUserApi().deleteUser(created.id);           // clean teardown
 });
 ```
@@ -117,34 +115,32 @@ const { standardUser } = getStaticUsers(); // fixed data from test-data/common/u
 ## Adding a New Page
 
 1. Create `page-objects/MyNewPage.ts` extending `BasePage`
-2. Register in `page-manager/PageManager.ts`
+2. Register in `fixtures/index.ts`
 
 ```typescript
 // page-objects/MyNewPage.ts
 import { BasePage } from '@base/BasePage';
 
 export class MyNewPage extends BasePage {
-  async doSomething() {
+  async doSomething(): Promise<void> {
     await this.page.getByRole('button', { name: 'Submit' }).click();
   }
 }
 ```
 
 ```typescript
-// page-manager/PageManager.ts
-import { MyNewPage } from '@page-objects/MyNewPage';
+// fixtures/index.ts — add to TestFixtures type and extend block
+type TestFixtures = {
+  // ... existing fixtures
+  myNewPage: MyNewPage;
+};
 
-export class PageManager {
-  private readonly myNewPage: MyNewPage;
-
-  constructor(page: Page) {
-    this.myNewPage = new MyNewPage(page);
-  }
-
-  onMyNewPage() {
-    return this.myNewPage;
-  }
-}
+export const test = base.extend<TestFixtures>({
+  // ... existing fixtures
+  myNewPage: async ({ page }, use) => {
+    await use(new MyNewPage(page));
+  },
+});
 ```
 
 ## Adding a New API Class

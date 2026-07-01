@@ -139,7 +139,7 @@ Never silently omit a check item.
 | TF-8 | All `expect()` calls are inside a `test.step` — never bare in the test body | 🔴 |
 | TF-9 | Verify steps are named `test.step('N. Verify ...', ...)` | 🟡 |
 | TF-10 | File contains at least one `expect()` call | 🔴 |
-| TF-11 | Zero `new XxxPage(page)` — always `pageManager.onXxxPage()` | 🔴 |
+| TF-11 | Zero `new XxxPage(page)` — always use injected fixtures from `@fixtures` | 🔴 |
 | TF-12 | Test data from factory functions (`generateXxxData()`) or `loadTestData()` — zero hardcoded domain values as assertion targets or form inputs | 🔴 |
 | TF-13 | File name: camelCase + `.spec.ts` | 🟡 |
 | TF-14 | Steps numbered sequentially without gaps | 🟡 |
@@ -155,7 +155,7 @@ Never silently omit a check item.
 |---|------|----------|
 | FX-1 | All fixture names declared in the `TestFixtures` type | 🔴 |
 | FX-2 | Every fixture implementation contains `await use(data)` | 🔴 |
-| FX-3 | Fixtures that need browser state use `pageManager` — not raw `page` | 🔴 |
+| FX-3 | Fixtures that need browser state use injected page object fixtures — not raw `page` directly | 🔴 |
 | FX-4 | `export { expect } from '@playwright/test'` present at the bottom | 🔴 |
 | FX-5 | Zero test assertions (`expect()`) inside fixture implementations | 🔴 |
 | FX-6 | Fixture serves a genuine shared precondition reused across multiple tests — not a one-off | 🟡 |
@@ -164,9 +164,11 @@ Never silently omit a check item.
 
 #### 4E — Other Files
 
-**`page-manager/PageManager.ts`:**
-- Every new Page Object has a `private readonly` field AND an `onXxxPage()` getter
-- `on` prefix strictly used — never `getXxxPage()`, `xxxPage()`, etc.
+**`fixtures/index.ts`:**
+- Every new Page Object has an entry in `TestFixtures` type AND a fixture implementation
+- Page Object fixtures: `async ({ page }, use) => { await use(new XxxPage(page)); }`
+- `navigationPage` fixture calls `page.goto('/')` before `use()` — no other fixture does this
+- Precondition fixtures declare their page object dependencies (e.g. `{ navigationPage, appointmentPage }`) — NOT raw `page`
 - Imports use `@page-objects/*` aliases
 
 **`page-objects/NavigationPage.ts`:**
