@@ -255,7 +255,7 @@ Present the analysis and recommendation:
 
 ```
 Fixture analysis:
-  Existing fixtures: appointmentPage, historyPage, profilePage, apiManager, loggedInPage, bookedAppointment
+  Existing fixtures: appointmentPage, historyPage, profilePage, apiManager, loggedInPage
 
   This test requires "an appointment already booked" as precondition.
   Same precondition may be needed by other history/verification tests.

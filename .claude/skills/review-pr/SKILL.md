@@ -255,10 +255,11 @@ FILE: page-objects/AppointmentPage.ts  [Page Object]
   ✅ PO-12  No verifyXxx() methods
   ✅ PO-13  No standalone locator.waitFor()
   ✅ PO-14  Method names are business actions
-  ✅ PO-15  PascalCase + Page suffix
-  ✅ PO-16  File name matches class name
-  N/A PO-17 Datepicker already extracted to DatepickerComponent — no inlining
-  ✅ PO-18  No hardcoded test data
+  ✅ PO-15  navigate() method present using page.goto('/appointment.php')
+  ✅ PO-16  PascalCase + Page suffix
+  ✅ PO-17  File name matches class name
+  N/A PO-18 Datepicker already extracted to DatepickerComponent — no inlining
+  ✅ PO-19  No hardcoded test data
 
 ────────────────────────────────────────────────────────────
 FILE: tests/e2e/makeAppointment.spec.ts  [Test file]
@@ -307,7 +308,7 @@ PR HYGIENE
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-🔴 Blocking — must fix before merge (3):
+🔴 Blocking — must fix before merge (4):
   1. [PO-7]  AppointmentPage.ts:22 — use page param, not this.page, in constructor
   2. [TF-4]  makeAppointment.spec.ts:4 — add { tag: ['@smoke', '@make-appointment'] }
   3. [TF-12] makeAppointment.spec.ts:23 — data.readmission ? 'Yes' : 'No'
