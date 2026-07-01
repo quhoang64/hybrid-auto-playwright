@@ -255,7 +255,7 @@ Present the analysis and recommendation:
 
 ```
 Fixture analysis:
-  Existing fixtures: pageManager, apiManager, loggedInPage
+  Existing fixtures: appointmentPage, historyPage, profilePage, apiManager, loggedInPage, bookedAppointment
 
   This test requires "an appointment already booked" as precondition.
   Same precondition may be needed by other history/verification tests.
@@ -285,7 +285,7 @@ Rules:
 - `test.describe('Feature Name', { tag: ['@priority', '@feature-tag'] }, () => { ... })`
 - Each logical group of actions wrapped in a numbered `test.step()`
 - All assertions inside `test.step('N. Verify ...')`
-- Declare only the fixtures the test needs — `{ navigationPage, xxxPage }` — NEVER `new XxxPage(page)` in test files
+- Declare only the fixtures the test needs — `{ xxxPage }` — NEVER `new XxxPage(page)` in test files
 - Dynamic data via factory function, static data via `loadTestData()` if JSON file exists
 
 Present the full code → **WAIT for user confirmation before writing any file.**

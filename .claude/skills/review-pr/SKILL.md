@@ -43,13 +43,11 @@ Review scope:
   PR:       #12 — "test(make-appointment): add smoke test for booking flow"
   Base:     main
 
-Changed files (6):
+Changed files (4):
   M  page-objects/AppointmentPage.ts                   [Page Object]
   A  page-objects/components/DatepickerComponent.ts    [Component]
   A  tests/e2e/makeAppointment.spec.ts                 [Test file]
   M  fixtures/index.ts                                 [Fixture]
-  M  page-manager/PageManager.ts                       [Other]
-  M  page-objects/NavigationPage.ts                    [Page Object]
 ```
 
 ---
@@ -277,7 +275,7 @@ FILE: tests/e2e/makeAppointment.spec.ts  [Test file]
   ✅ TF-8   All expect() inside test.step
   🟡 TF-9   Step 4 label "Verify confirmation details" could be more specific
   ✅ TF-10  File has expect() calls
-  ✅ TF-11  pageManager.onAppointmentPage() — no new XxxPage()
+  ✅ TF-11  appointmentPage fixture injected — no new XxxPage()
   🔴 TF-12  Hardcoded value in assertion
               Line 23: toHaveText('Yes')
               Fix: toHaveText(data.readmission ? 'Yes' : 'No')

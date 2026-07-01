@@ -71,9 +71,8 @@ gh pr list --state open --json number,title,headRefName  # open PRs
 Present findings:
 ```
 Current branch: main (or test/make-appointment)
-Uncommitted changes: 6 files
+Uncommitted changes: 3 files
   M  page-objects/HistoryPage.ts
-  M  page-manager/PageManager.ts
   A  tests/e2e/historyAppointment.spec.ts
   ...
 

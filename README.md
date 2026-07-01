@@ -82,9 +82,9 @@ Always import `test` and `expect` from `@fixtures`:
 import { test, expect } from '@fixtures';
 import { generateAppointmentData } from '@test-data/AppointmentData';
 
-test('book appointment', async ({ navigationPage, appointmentPage }) => {
+test('book appointment', async ({ appointmentPage }) => {
   const data = generateAppointmentData();
-  await navigationPage.navigateToMakeAppointment();
+  await appointmentPage.navigate();
   await appointmentPage.fillForm(data);
   await appointmentPage.bookAppointment();
   await expect(appointmentPage.confirmFacility).toHaveText(data.facility);
@@ -94,10 +94,10 @@ test('book appointment', async ({ navigationPage, appointmentPage }) => {
 ### Hybrid pattern — API setup + UI verify
 
 ```typescript
-test('create user and verify on UI', async ({ navigationPage, apiManager }) => {
+test('create user and verify on UI', async ({ appointmentPage, apiManager }) => {
   const user = generateUser();
   const created = await apiManager.onUserApi().createUser(user); // fast, no UI
-  // verify on UI via navigationPage / other page fixtures ...
+  // verify on UI via appointmentPage / other page fixtures ...
   await apiManager.onUserApi().deleteUser(created.id);           // clean teardown
 });
 ```

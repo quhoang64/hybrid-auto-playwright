@@ -193,7 +193,7 @@ export class ReschedulePage extends BasePage {
 | Thêm shared utility | Tạo file trong `helpers/` |
 | Thêm required env var | Cập nhật `helpers/EnvValidator.ts` + `.env.example` |
 
-`PageManager` và `ApiManager` là công cụ trung lập — không chứa logic setup/teardown, không biết test cần login hay không. Fixture mới chỉ tạo khi có precondition/teardown cần tái sử dụng ở nhiều tests. Test tự khai báo fixture nào nó cần.
+`ApiManager` là công cụ trung lập — không chứa logic setup/teardown, không biết test cần login hay không. Fixture mới chỉ tạo khi có precondition/teardown cần tái sử dụng ở nhiều tests. Test tự khai báo fixture nào nó cần.
 
 ## Writing a new test
 
@@ -233,10 +233,10 @@ test.describe('Feature Name', { tag: ['@smoke', '@feature-tag'] }, () => {
 ## Hybrid pattern (API setup → UI verify → API teardown)
 
 ```typescript
-test('hybrid test', async ({ pageManager, apiManager }) => {
+test('hybrid test', async ({ appointmentPage, apiManager }) => {
   const user = generateUser();
   const created = await apiManager.onUserApi().createUser(user);  // fast, no UI
-  // ... verify on UI via pageManager ...
+  // ... verify on UI via appointmentPage or other page fixture ...
   await apiManager.onUserApi().deleteUser(created.id);            // clean teardown
 });
 ```

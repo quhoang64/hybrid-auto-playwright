@@ -36,8 +36,7 @@ Files to create:
   tests/e2e/makeAppointment.spec.ts      NEW
 
 Files to update:
-  page-objects/NavigationPage.ts         add navigateToMakeAppointment()
-  page-manager/PageManager.ts            add onAppointmentPage()
+  fixtures/index.ts                      register AppointmentPage fixture
 
 Navigation causes redirect: /#appointment → /appointment.php#summary (on submit)
 Scenarios: 1 test, 4 steps
@@ -171,6 +170,10 @@ export class AppointmentPage extends BasePage {
     this.confirmComment = page.locator('#comment');
   }
 
+  async navigate(): Promise<void> {
+    await this.page.goto('/appointment.php');
+  }
+
   async fillForm(data: AppointmentData): Promise<void> {
     await this.facilitySelect.selectOption(data.facility);
     if (data.readmission) {
@@ -206,45 +209,25 @@ export class AppointmentPage extends BasePage {
 }
 ```
 
-### `page-objects/NavigationPage.ts` (updated)
+### `fixtures/index.ts` (updated)
 
 ```typescript
-import { Locator, Page } from '@playwright/test';
-import { BasePage } from '@base/BasePage';
-
-export class NavigationPage extends BasePage {
-  private readonly makeAppointmentLink: Locator;
-
-  constructor(page: Page) {
-    super(page);
-    this.makeAppointmentLink = page.getByRole('link', { name: 'Make Appointment' });
-  }
-
-  async navigateToMakeAppointment() {
-    await this.makeAppointmentLink.click();
-  }
-}
-```
-
-### `page-manager/PageManager.ts` (updated)
-
-```typescript
-import { Page } from '@playwright/test';
-import { NavigationPage } from '@page-objects/NavigationPage';
+import { test as base, Page } from '@playwright/test';
 import { AppointmentPage } from '@page-objects/AppointmentPage';
 
-export class PageManager {
-  private readonly navigationPage: NavigationPage;
-  private readonly appointmentPage: AppointmentPage;
+type TestFixtures = {
+  appointmentPage: AppointmentPage;
+  // ... other fixtures
+};
 
-  constructor(page: Page) {
-    this.navigationPage = new NavigationPage(page);
-    this.appointmentPage = new AppointmentPage(page);
-  }
+export const test = base.extend<TestFixtures>({
+  appointmentPage: async ({ page }, use) => {
+    await use(new AppointmentPage(page));
+  },
+  // ... other fixture implementations
+});
 
-  onNavigationPage() { return this.navigationPage; }
-  onAppointmentPage() { return this.appointmentPage; }
-}
+export { expect } from '@playwright/test';
 ```
 
 ---
@@ -300,12 +283,11 @@ import { test, expect } from '@fixtures';
 import { generateAppointmentData } from '@test-data/AppointmentData';
 
 test.describe('Make Appointment', { tag: ['@smoke', '@feature-make-appointment'] }, () => {
-  test('book appointment and verify confirmation', async ({ pageManager }) => {
+  test('book appointment and verify confirmation', async ({ appointmentPage }) => {
     const data = generateAppointmentData();
-    const appointmentPage = pageManager.onAppointmentPage();
 
     await test.step('1. Navigate to Make Appointment page', async () => {
-      await pageManager.onNavigationPage().navigateToMakeAppointment();
+      await appointmentPage.navigate();
     });
 
     await test.step('2. Fill appointment form', async () => {
@@ -333,6 +315,7 @@ test.describe('Make Appointment', { tag: ['@smoke', '@feature-make-appointment']
 
 | Decision | Reason |
 |----------|--------|
+| `navigate()` uses `page.goto('/appointment.php')` directly | Faster and more isolated than clicking through navigation menus; each Page Object owns its own URL |
 | `healthcareProgram` radio inline (not in constructor) | Value is dynamic — can't hardcode all options as separate fields |
 | `selectVisitDate` is `private` | Implementation detail of the page, not a business action tests need to call directly |
 | Datepicker scoped to `.datepicker-days` | The Bootstrap datepicker renders 5 `.datepicker-switch` elements (one per view — days/months/years/decades/centuries); scoping prevents strict mode violation |

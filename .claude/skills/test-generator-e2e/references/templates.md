@@ -171,7 +171,7 @@ test.describe('Feature Name', { tag: ['@smoke', '@feature-xxx'] }, () => {
 - Tags on `test.describe`: `['@priority', '@feature-tag']`
 - Every logical group wrapped in `test.step('N. Description', ...)`
 - All assertions inside `test.step('N. Verify ...')`
-- Declare only the fixtures the test needs — `{ navigationPage, xxxPage }` — **NEVER** `new XxxPage(page)`
+- Declare only the fixtures the test needs — `{ xxxPage }` — **NEVER** `new XxxPage(page)`
 - Dynamic data via factory function (`generateXxxData()`)
 - Static data via `loadTestData<T>('xxx.json')` from `@helpers/DataLoader`
 
