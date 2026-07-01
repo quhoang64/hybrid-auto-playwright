@@ -9,6 +9,10 @@ export class HistoryPage extends BasePage {
     this.panels = page.locator('.panel.panel-info');
   }
 
+  async navigate(): Promise<void> {
+    await this.page.goto('/history.php#history');
+  }
+
   getAppointment(visitDate: string, comment: string) {
     const panel = this.panels
       .filter({ has: this.page.locator('.panel-heading', { hasText: visitDate }) })

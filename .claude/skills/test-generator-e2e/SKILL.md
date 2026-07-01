@@ -60,7 +60,6 @@ Files to create:
   tests/e2e/makeAppointment.spec.ts      NEW
 
 Files to update:
-  page-objects/NavigationPage.ts         add navigateToMakeAppointment()
   fixtures/index.ts                      register AppointmentPage fixture
 
 Components:
@@ -209,11 +208,10 @@ Rules:
 Present the full code → **WAIT for user confirmation before writing any file.**
 
 After confirmed, in order:
-1. Write `page-objects/XxxPage.ts`
-2. Update `page-objects/NavigationPage.ts` — add `navigateToXxx()` method + locator in constructor
-3. Update `fixtures/index.ts` — add `xxxPage: XxxPage` to `TestFixtures` type + fixture implementation
-4. Run `npx tsc --noEmit` then `npm run lint`
-5. Report results. If errors → show full output, NEVER auto-fix, ask user how to proceed.
+1. Write `page-objects/XxxPage.ts` — include `navigate()` with `page.goto('/path')`
+2. Update `fixtures/index.ts` — add `xxxPage: XxxPage` to `TestFixtures` type + fixture implementation
+3. Run `npx tsc --noEmit` then `npm run lint`
+4. Report results. If errors → show full output, NEVER auto-fix, ask user how to proceed.
 
 ---
 
@@ -345,6 +343,6 @@ Wait for user input before taking any action.
 7. **NEVER skip confirmation page exploration** — need locators for assertions
 8. **ALWAYS run `tsc + lint` after writing files** — catch errors before test run
 9. **ALWAYS confirm stability with 2 consecutive passes**
-10. **ALWAYS update NavigationPage + fixtures/index.ts** when adding a new page
+10. **ALWAYS add `navigate()` to the Page Object AND register in `fixtures/index.ts`** when adding a new page
 11. **ALWAYS run Step 4.5 fixture analysis** — never skip it, even if no fixture is needed; always show the recommendation and wait for confirmation before writing the test file
 12. **NEVER create a fixture** without explicit user confirmation — present the recommendation, explain the tradeoff, let user decide

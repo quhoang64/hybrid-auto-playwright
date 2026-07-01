@@ -101,10 +101,11 @@ Never silently omit a check item.
 | PO-12 | Zero `verifyXxx()` method names | 🔴 |
 | PO-13 | Zero standalone `locator.waitFor()` calls (not `waitForURL`) | 🔴 |
 | PO-14 | Method names describe business actions (`fillForm`, `bookAppointment`) — not UI steps (`clickButton`, `typeText`) | 🔴 |
-| PO-15 | Class name: PascalCase + `Page` suffix | 🟡 |
-| PO-16 | File name matches class name exactly (e.g., `AppointmentPage.ts`) | 🟡 |
-| PO-17 | Shared UI widget used on 2+ pages is extracted to `components/` — not inlined | 🟡 |
-| PO-18 | No hardcoded test data strings inside the page object | 🟡 |
+| PO-15 | Page Object has a `navigate()` method using `page.goto('/path')` | 🟡 |
+| PO-16 | Class name: PascalCase + `Page` suffix | 🟡 |
+| PO-17 | File name matches class name exactly (e.g., `AppointmentPage.ts`) | 🟡 |
+| PO-18 | Shared UI widget used on 2+ pages is extracted to `components/` — not inlined | 🟡 |
+| PO-19 | No hardcoded test data strings inside the page object | 🟡 |
 
 ---
 
@@ -167,14 +168,8 @@ Never silently omit a check item.
 **`fixtures/index.ts`:**
 - Every new Page Object has an entry in `TestFixtures` type AND a fixture implementation
 - Page Object fixtures: `async ({ page }, use) => { await use(new XxxPage(page)); }`
-- `navigationPage` fixture calls `page.goto('/')` before `use()` — no other fixture does this
-- Precondition fixtures declare their page object dependencies (e.g. `{ navigationPage, appointmentPage }`) — NOT raw `page`
+- Precondition fixtures declare their page object dependencies (e.g. `{ appointmentPage }`) — NOT raw `page`
 - Imports use `@page-objects/*` aliases
-
-**`page-objects/NavigationPage.ts`:**
-- New navigation methods follow `navigateToXxx()` naming
-- `waitForURL()` called in every method that causes a URL change
-- Locators declared as `private readonly` class fields, initialized with `page` param (not `this.page`)
 
 **`test-data/*.ts`:**
 - Interface exported alongside factory function

@@ -9,11 +9,10 @@ const STATIC = loadTestData<ProfileData>('profile.json');
 
 test.describe('Profile', { tag: ['@regression', '@profile-appointment'] }, () => {
   test('Verify that the user can see the profile appointment after clicking the Profile button on the right menu', async ({
-    navigationPage,
     profilePage,
   }) => {
-    await test.step('1. Navigate to Profile via menu', async () => {
-      await navigationPage.navigateToProfile();
+    await test.step('1. Navigate to Profile', async () => {
+      await profilePage.navigate();
     });
 
     await test.step('2. Verify profile page content', async () => {

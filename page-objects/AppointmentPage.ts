@@ -34,6 +34,10 @@ export class AppointmentPage extends BasePage {
     this.confirmComment = page.locator('#comment');
   }
 
+  async navigate(): Promise<void> {
+    await this.page.goto('/appointment.php');
+  }
+
   async fillForm(data: AppointmentData): Promise<void> {
     await this.facilitySelect.selectOption(data.facility);
     if (data.readmission) {

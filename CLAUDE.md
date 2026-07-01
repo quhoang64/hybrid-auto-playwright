@@ -89,7 +89,7 @@ global-setup.ts           runs first — validates .env before anything else
 
 - **BasePage** — holds `page: Page` and shared helpers. Never instantiated directly.
 - **Components** (`page-objects/components/`) — reusable UI widgets shared across multiple pages (e.g. `DatepickerComponent`). Not a BasePage subclass — instantiated directly inside Page Object constructors. Extract to a component when the same UI element appears on 2+ pages.
-- **Page Objects** — encapsulate locators and user actions for one page. All locators declared as `private readonly` fields in the constructor. Methods named after business actions (e.g. `fillForm`, `bookAppointment`), not UI steps.
+- **Page Objects** — encapsulate locators and user actions for one page. All locators declared as `private readonly` fields in the constructor. Each page object has a `navigate()` method using `page.goto('/path')`. Methods named after business actions (e.g. `fillForm`, `bookAppointment`), not UI steps.
 - **BaseApi** — holds `request: APIRequestContext`. All API classes extend this.
 - **ApiManager** — owns one instance of every API class. Methods prefixed `on`.
 - **Fixtures** (`fixtures/index.ts`) — the DI layer. Each Page Object and ApiManager is registered as a Playwright fixture. Tests declare only the fixtures they need — Playwright instantiates lazily. Always import `test`/`expect` from `@fixtures`, never from `@playwright/test` directly.
@@ -184,7 +184,7 @@ export class ReschedulePage extends BasePage {
 
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
-| Thêm page mới | Tạo `page-objects/MyPage.ts`, đăng ký fixture trong `fixtures/index.ts`, thêm `navigateToMyPage()` vào `NavigationPage` |
+| Thêm page mới | Tạo `page-objects/MyPage.ts` với `navigate()` method, đăng ký fixture trong `fixtures/index.ts` |
 | Thêm UI component dùng chung (2+ pages) | Tạo `page-objects/components/MyComponent.ts`, dùng trong Page Object constructor |
 | Thêm API endpoint mới | Tạo `api/MyApi.ts`, thêm vào `ApiManager` |
 | Thêm precondition / teardown | Thêm fixture mới vào `fixtures/index.ts` |
@@ -202,11 +202,11 @@ import { test, expect } from '@fixtures';
 import { generateAppointmentData } from '@test-data/AppointmentData'; // dynamic (faker)
 
 test.describe('Feature Name', { tag: ['@smoke', '@feature-tag'] }, () => {
-  test('scenario name', async ({ navigationPage, appointmentPage }) => {
+  test('scenario name', async ({ appointmentPage }) => {
     const data = generateAppointmentData();
 
     await test.step('1. Navigate to page', async () => {
-      await navigationPage.navigateToMakeAppointment();
+      await appointmentPage.navigate();
     });
 
     await test.step('2. Fill form', async () => {
@@ -330,9 +330,8 @@ See `.claude/skills/review-pr/SKILL.md` for full checklist and golden rules.
 
 ## Adding a new page
 
-1. Create `page-objects/MyNewPage.ts` extending `BasePage` from `@base/BasePage`
-2. Add `navigateToMyNew()` in `page-objects/NavigationPage.ts` (locator in constructor)
-3. Register fixture in `fixtures/index.ts` — add type to `TestFixtures` + fixture implementation
+1. Create `page-objects/MyNewPage.ts` extending `BasePage` from `@base/BasePage` — include a `navigate()` method with `page.goto('/path')`
+2. Register fixture in `fixtures/index.ts` — add type to `TestFixtures` + fixture implementation
 
 ## Adding a new API class
 

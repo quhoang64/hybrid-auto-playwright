@@ -10,4 +10,8 @@ export class ProfilePage extends BasePage {
     this.underConstruction = page.getByText('Under construction.');
     this.logoutLink = page.locator('#profile').getByRole('link', { name: 'Logout' });
   }
+
+  async navigate(): Promise<void> {
+    await this.page.goto('/profile.php#profile');
+  }
 }

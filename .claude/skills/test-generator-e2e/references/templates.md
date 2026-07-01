@@ -34,6 +34,10 @@ export class XxxPage extends BasePage {
     this.confirmFieldB = page.locator('#field-b');
   }
 
+  async navigate(): Promise<void> {
+    await this.page.goto('/xxx-page-path');
+  }
+
   async fillForm(data: XxxData): Promise<void> {
     await this.fieldA.fill(data.fieldA);
     await this.fieldB.selectOption(data.fieldB);
@@ -54,36 +58,6 @@ export class XxxPage extends BasePage {
 - Method names describe business actions: `fillForm`, `bookAppointment`, `submitOrder`
 - `waitForURL(...)` inside any method that causes navigation
 - **NO** `expect()`, `verifyXxx()`, or `waitFor()` in page objects
-
----
-
-## 2. NavigationPage Update
-
-When adding a new page, add the navigation method + locator to `NavigationPage.ts`:
-
-```typescript
-import { Locator, Page } from '@playwright/test';
-import { BasePage } from '@base/BasePage';
-
-export class NavigationPage extends BasePage {
-  private readonly existingLink: Locator;
-  private readonly newFeatureLink: Locator;   // ← add
-
-  constructor(page: Page) {
-    super(page);
-    this.existingLink = page.getByRole('link', { name: 'Existing' });
-    this.newFeatureLink = page.getByRole('link', { name: 'New Feature' }); // ← add
-  }
-
-  async navigateToExisting() {
-    await this.existingLink.click();
-  }
-
-  async navigateToNewFeature() {          // ← add
-    await this.newFeatureLink.click();
-  }
-}
-```
 
 ---
 
@@ -169,11 +143,11 @@ import { test, expect } from '@fixtures';
 import { generateXxxData } from '@test-data/XxxData';
 
 test.describe('Feature Name', { tag: ['@smoke', '@feature-xxx'] }, () => {
-  test('scenario name — what the user can do', async ({ navigationPage, xxxPage }) => {
+  test('scenario name — what the user can do', async ({ xxxPage }) => {
     const data = generateXxxData();
 
     await test.step('1. Navigate to feature page', async () => {
-      await navigationPage.navigateToXxx();
+      await xxxPage.navigate();
     });
 
     await test.step('2. Fill form', async () => {
