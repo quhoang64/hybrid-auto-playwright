@@ -175,7 +175,6 @@ export class ReschedulePage extends BasePage {
 | `@fixtures` | `fixtures/index.ts` |
 | `@base/*` | `base/*` |
 | `@page-objects/*` | `page-objects/*` |
-| `@page-manager/*` | `page-manager/*` |
 | `@api/*` | `api/*` |
 | `@test-data/*` | `test-data/*` |
 | `@helpers/*` | `helpers/*` |

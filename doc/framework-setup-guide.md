@@ -28,19 +28,18 @@ Dùng lệnh `/init` trong Claude Code để tạo `CLAUDE.md` tự động từ
 
 **Prompt dùng:**
 ```
-Tôi muốn build framework Playwright theo kiến trúc 5 layer sau:
+Tôi muốn build framework Playwright theo kiến trúc sau:
 
-Tests → Fixtures → PageManager → PageObjects → BasePage
+Tests → Fixtures → PageObjects → BasePage
 
 Hãy tạo toàn bộ cấu trúc thư mục và example class cho từng layer:
 - base/BasePage.ts           — abstract base class, mọi Page Object extend từ đây
 - page-objects/              — concrete Page Object classes, mỗi page 1 file
-- page-manager/PageManager.ts — single entry point tới tất cả page objects
-- fixtures/index.ts          — custom Playwright fixture inject PageManager vào tests
+- fixtures/index.ts          — custom Playwright fixture đăng ký từng Page Object
 - tests/                     — test specs
 
-Tạo example 2 page objects (NavigationPage, FormLayoutsPage, DatepickerPage),
-PageManager quản lý chúng, và 2 test files dùng fixture.
+Tạo example 2 page objects (AppointmentPage, HistoryPage),
+mỗi page có navigate() method, fixtures đăng ký chúng trực tiếp, và 2 test files.
 
 Áp dụng best practice: method đặt tên theo business action, tests không instantiate
 Page Object trực tiếp, fixture re-export expect để tests có 1 import duy nhất.
@@ -51,18 +50,18 @@ Page Object trực tiếp, fixture re-export expect để tests có 1 import duy
 base/
   BasePage.ts
 page-objects/
-  NavigationPage.ts
-  FormLayoutsPage.ts
-  DatepickerPage.ts
+  AppointmentPage.ts
+  HistoryPage.ts
 fixtures/
   index.ts            ← DI layer: mỗi Page Object là 1 Playwright fixture
 helpers/              ← trống, dành cho utils sau này
 tests/
-  usePageObjects.spec.ts
-  testSuite1.spec.ts
+  e2e/
+    makeAppointment.spec.ts
+    historyAppointment.spec.ts
 ```
 
-> **Lưu ý:** PageManager từng là một layer riêng (orchestrator giữ tất cả page objects). Đã loại bỏ vì Playwright fixtures đã là DI container — PageManager là layer thừa. Fixture giờ đăng ký từng Page Object trực tiếp, test khai báo chỉ những gì cần.
+> **Lưu ý:** Playwright fixtures đã là DI container — không cần thêm PageManager layer thừa. Fixture đăng ký từng Page Object trực tiếp, test khai báo chỉ những gì nó cần.
 
 **Lý do chọn cấu trúc này:**
 
@@ -88,7 +87,6 @@ Path aliases cần:
 - @fixtures  → fixtures/index.ts
 - @base/*    → base/*
 - @page-objects/* → page-objects/*
-- @page-manager/* → page-manager/*
 - @helpers/* → helpers/*
 
 Sau khi tạo tsconfig.json, cập nhật tất cả imports hiện tại sang dùng aliases.
@@ -108,12 +106,11 @@ Sau khi tạo tsconfig.json, cập nhật tất cả imports hiện tại sang d
     "paths": {
       "@base/*": ["base/*"],
       "@page-objects/*": ["page-objects/*"],
-      "@page-manager/*": ["page-manager/*"],
       "@fixtures": ["fixtures/index"],
       "@helpers/*": ["helpers/*"]
     }
   },
-  "include": ["base/**/*.ts", "page-objects/**/*.ts", "page-manager/**/*.ts", "fixtures/**/*.ts", "helpers/**/*.ts", "tests/**/*.ts"],
+  "include": ["base/**/*.ts", "page-objects/**/*.ts", "fixtures/**/*.ts", "helpers/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules"]
 }
 ```
@@ -320,7 +317,7 @@ projects: [
 Thêm API Request layer vào Playwright framework hiện tại:
 - Tạo folder api/ với BaseApi.ts, UserApi.ts (example), ApiManager.ts
 - BaseApi nhận APIRequestContext thay vì Page
-- ApiManager quản lý tất cả API classes, pattern giống PageManager
+- ApiManager quản lý tất cả API classes (single entry point tới API layer)
 - Thêm apiManager fixture vào fixtures/index.ts dùng request thay vì page
 - Thêm @api/* path alias vào tsconfig.json
 - Tạo example test hybrid: setup data qua API, verify qua UI, teardown qua API
@@ -356,10 +353,10 @@ apiManager: async ({ request }, use) => {
 
 **Hybrid test pattern (setup API → verify UI → teardown API):**
 ```typescript
-test('create user via API then verify on UI', async ({ pageManager, apiManager }) => {
+test('create user via API then verify on UI', async ({ appointmentPage, apiManager }) => {
   const user = generateUser();
   const created = await apiManager.onUserApi().createUser(user);  // nhanh, không qua UI
-  // ... verify trên UI ...
+  // ... verify trên UI qua appointmentPage hoặc page fixture khác ...
   await apiManager.onUserApi().deleteUser(created.id);            // clean up
 });
 ```
@@ -382,13 +379,13 @@ Một số app không cho lưu cookie hoặc invalidate session thường xuyên
 import { test as base, Page } from '@playwright/test';
 
 type TestFixtures = {
-  pageManager: PageManager;
+  appointmentPage: AppointmentPage;
   apiManager: ApiManager;
   loggedInPage: Page;      // ← thêm type
 };
 
 export const test = base.extend<TestFixtures>({
-  // ... pageManager, apiManager giữ nguyên ...
+  // ... appointmentPage, apiManager giữ nguyên ...
 
   loggedInPage: async ({ page }, use) => {
     await page.goto('/login');
@@ -403,25 +400,25 @@ export const test = base.extend<TestFixtures>({
 
 **Dùng trong test:**
 ```typescript
-// Cần login + pageManager → khai báo cả 2, chúng dùng chung 1 page object
-test('test cần auth', async ({ loggedInPage, pageManager }) => {
-  // loggedInPage đã logged in, pageManager hoạt động trên cùng page đó
+// Cần login + page object → khai báo cả 2, chúng dùng chung 1 page object
+test('test cần auth', async ({ loggedInPage, appointmentPage }) => {
+  // loggedInPage đã logged in, appointmentPage hoạt động trên cùng page đó
 });
 
-// Không cần login → chỉ dùng pageManager, không trigger login
-test('test không cần auth', async ({ pageManager }) => { ... });
+// Không cần login → chỉ dùng page object fixture, không trigger login
+test('test không cần auth', async ({ appointmentPage }) => { ... });
 ```
 
 **Lưu ý quan trọng — fixture dependency:**
 
-Nếu khai báo `loggedInPage` trong params của fixture khác (ví dụ `pageManager`), Playwright sẽ chạy `loggedInPage` trước rồi mới chạy `pageManager`. Điều này làm mọi test dùng `pageManager` đều bị trigger login — **không nên làm vậy**. Hãy để test tự khai báo fixture nào nó cần.
+Nếu khai báo `loggedInPage` trong params của fixture khác, Playwright sẽ chạy `loggedInPage` trước. Điều này làm mọi test dùng fixture đó đều bị trigger login — **không nên làm vậy**. Hãy để test tự khai báo fixture nào nó cần.
 
 ```typescript
-// ❌ Sai — mọi test dùng pageManager đều bị login
-pageManager: async ({ page, loggedInPage }, use) => { ... }
+// ❌ Sai — mọi test dùng appointmentPage đều bị login
+appointmentPage: async ({ page, loggedInPage }, use) => { ... }
 
 // ✅ Đúng — test tự quyết định
-test('my test', async ({ loggedInPage, pageManager }) => { ... })
+test('my test', async ({ loggedInPage, appointmentPage }) => { ... })
 ```
 
 ---
@@ -712,13 +709,13 @@ Bạn không cần đụng vào code — chỉ cần mô tả form login là xon
 
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
-| Thêm page mới | Tạo `page-objects/MyPage.ts`, đăng ký fixture trong `fixtures/index.ts`, thêm `navigateToMyPage()` vào `NavigationPage` |
+| Thêm page mới | Tạo `page-objects/MyPage.ts` với `navigate()` method, đăng ký fixture trong `fixtures/index.ts` |
 | Thêm API endpoint mới | Tạo `api/MyApi.ts`, thêm vào `ApiManager` |
 | Thêm precondition / teardown | Thêm fixture mới vào `fixtures/index.ts` |
 | Thêm test data model | Tạo `test-data/MyData.ts` với interface + factory function |
 
 **Nguyên tắc:**
-- `PageManager` / `ApiManager` là công cụ trung lập — không chứa logic setup/teardown, không biết test cần login hay không
+- `ApiManager` là công cụ trung lập — không chứa logic setup/teardown, không biết test cần login hay không
 - `Fixture` chỉ tạo mới khi có precondition/teardown cần tái sử dụng ở nhiều tests
 - Test tự khai báo những fixture nào nó cần — không để fixture này depend vào fixture khác trừ khi luôn luôn cần
 
@@ -728,7 +725,7 @@ Bạn không cần đụng vào code — chỉ cần mô tả form login là xon
 
 ```
 base/               BasePage.ts
-page-objects/       NavigationPage.ts, AppointmentPage.ts, ...
+page-objects/       AppointmentPage.ts, HistoryPage.ts, ProfilePage.ts, ...
 api/                BaseApi.ts, ApiManager.ts, ...
 fixtures/           index.ts  (mỗi Page Object là 1 fixture + apiManager + loggedInPage)
 test-data/          AppointmentData.ts, ...
@@ -809,12 +806,11 @@ Khi test fail, report chỉ hiện dòng lỗi — không biết test đang làm
 
 **Với test.step():**
 ```typescript
-test('book appointment and verify confirmation', async ({ pageManager }) => {
+test('book appointment and verify confirmation', async ({ appointmentPage }) => {
   const data = generateAppointmentData();
-  const appointmentPage = pageManager.onAppointmentPage();
 
   await test.step('1. Navigate to Make Appointment page', async () => {
-    await pageManager.onNavigationPage().navigateToMakeAppointment();
+    await appointmentPage.navigate();
   });
 
   await test.step('2. Fill appointment form', async () => {
